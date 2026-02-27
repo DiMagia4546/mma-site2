@@ -1,3 +1,36 @@
+<?php
+session_start();
+include "db.php";
+
+$error = "";
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
+    $email = trim($_POST['email']);
+    $password = trim($_POST['password']);
+
+    $stmt = $conn->prepare("SELECT * FROM users WHERE email=? LIMIT 1");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $res = $stmt->get_result();
+
+    if ($res->num_rows === 1) {
+        $user = $res->fetch_assoc();
+
+        if (password_verify($password, $user['password'])) {
+
+            $_SESSION['user_id'] = $user['id'];
+            header("Location: dashboard.php");
+            exit;
+
+        } else {
+            $error = "Password incorreta.";
+        }
+    } else {
+        $error = "Email não encontrado.";
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -60,23 +93,21 @@
                 </p>
             </div>
 
-            <form class="space-y-6">
+            <?php if (!empty($error)): ?>
+                <p class="bg-red-600 text-white p-3 rounded mb-6 text-center text-xl"><?= $error ?></p>
+            <?php endif; ?>
 
-                <div>
-                    <label class="block text-lg mb-1 text-neutral-300">Nome</label>
-                    <input type="text"
-                           class="w-full px-4 py-3 rounded bg-neutral-800 border border-neutral-700 focus:outline-none focus:border-slate-500">
-                </div>
+            <form method="POST" class="space-y-6">
 
                 <div>
                     <label class="block text-lg mb-1 text-neutral-300">Email</label>
-                    <input type="email"
+                    <input type="email" name="email" required
                            class="w-full px-4 py-3 rounded bg-neutral-800 border border-neutral-700 focus:outline-none focus:border-slate-500">
                 </div>
 
                 <div>
                     <label class="block text-lg mb-1 text-neutral-300">Password</label>
-                    <input type="password"
+                    <input type="password" name="password" required
                            class="w-full px-4 py-3 rounded bg-neutral-800 border border-neutral-700 focus:outline-none focus:border-slate-500">
                 </div>
 
@@ -91,6 +122,12 @@
                class="block text-center mt-8 text-slate-400 hover:text-slate-300 transition text-lg">
                 ← Voltar ao site
             </a>
+
+            <p class="text-center text-neutral-400 mt-4 text-lg">
+                Não tens conta?
+                <a href="register.php" class="text-red-500 hover:text-red-400">Criar conta</a>
+            </p>
+
         </div>
 
     </div>

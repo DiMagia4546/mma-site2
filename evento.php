@@ -36,7 +36,7 @@ $fights = $conn->query($sql_fights);
 
 <body class="bg-neutral-900 text-neutral-100">
 
-<!-- NAVBAR ESCURA -->
+<!-- NAVBAR -->
 <nav class="fixed top-0 w-full z-40 bg-neutral-900/70 backdrop-blur border-b border-neutral-700">
     <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         <a href="index.php" class="flex items-center gap-3">
@@ -58,7 +58,7 @@ $fights = $conn->query($sql_fights);
 
 <div class="pt-24"></div>
 
-<!-- BANNER ESCURO -->
+<!-- BANNER -->
 <?php
 $banner = !empty($event['banner']) ? $event['banner'] : 'uploads/default_banner.webp';
 ?>
@@ -69,10 +69,20 @@ $banner = !empty($event['banner']) ? $event['banner'] : 'uploads/default_banner.
         <p class="text-neutral-300 text-lg mt-2">
             📅 <?= date("d/m/Y", strtotime($event['date'])) ?> &nbsp; • &nbsp; 📍 <?= htmlspecialchars($event['location']) ?>
         </p>
+
+        <!-- BOTÃO FAVORITO -->
+        <?php if (isset($_SESSION['user_id'])): ?>
+        <form method="POST" action="toggle_favorite.php">
+            <input type="hidden" name="event_id" value="<?= $event['id'] ?>">
+            <button class="mt-4 bg-red-600 px-6 py-3 rounded-lg hover:bg-red-700 transition">
+                ⭐ Adicionar aos Favoritos
+            </button>
+        </form>
+        <?php endif; ?>
     </div>
 </div>
 
-<!-- FIGHT CARD DARK MODE -->
+<!-- FIGHT CARD -->
 <section class="max-w-5xl mx-auto px-6 py-12">
 
     <h2 class="text-5xl font-bold text-white tracking-wide mb-10">Fight Card</h2>
@@ -120,12 +130,6 @@ $banner = !empty($event['banner']) ? $event['banner'] : 'uploads/default_banner.
         </a>
     </div>
 </section>
-
-<!-- FOOTER ESCURO -->
-<footer class="bg-neutral-900 border-t border-neutral-700 py-10 text-center">
-    <p class="text-neutral-300 text-lg">📧 mma360@gmail.com</p>
-    <p class="mt-4 text-neutral-500 text-sm">© 2025 MMA 360 — Todos os direitos reservados</p>
-</footer>
 
 </body>
 </html>

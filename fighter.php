@@ -41,7 +41,7 @@ $isChampion = ($f['wins'] > 20 && ($f['wins'] - $f['losses']) > 10);
 
 <body class="bg-neutral-900 text-neutral-100">
 
-<!-- NAVBAR ESCURA -->
+<!-- NAVBAR -->
 <nav class="fixed top-0 w-full z-40 bg-neutral-900/70 backdrop-blur border-b border-neutral-700">
     <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         
@@ -82,7 +82,7 @@ $isChampion = ($f['wins'] > 20 && ($f['wins'] - $f['losses']) > 10);
     <div>
         <p class="text-red-500 text-2xl uppercase tracking-wide"><?= $f['weight_class'] ?></p>
 
-        <h1 class="text-6xl font-bold mt-2 text-white"><?= $f['name'] ?></h1>
+        <h1 class="text-6xl font-bold mt-2"><?= $f['name'] ?></h1>
 
         <?php if (!empty($f['nickname'])): ?>
             <p class="text-2xl text-neutral-400 mb-4">"<?= $f['nickname'] ?>"</p>
@@ -90,20 +90,30 @@ $isChampion = ($f['wins'] > 20 && ($f['wins'] - $f['losses']) > 10);
 
         <p class="text-lg text-neutral-300 mb-6"><?= $f['nationality'] ?></p>
 
+        <!-- BOTÃO FAVORITO -->
+        <?php if (isset($_SESSION['user_id'])): ?>
+        <form method="POST" action="toggle_favorite.php">
+            <input type="hidden" name="fighter_id" value="<?= $f['id'] ?>">
+            <button class="mt-6 bg-red-600 px-6 py-3 rounded-lg hover:bg-red-700 transition">
+                ⭐ Adicionar aos Favoritos
+            </button>
+        </form>
+        <?php endif; ?>
+
         <!-- RECORD -->
-        <div class="grid grid-cols-3 gap-4 mb-10">
+        <div class="grid grid-cols-3 gap-4 mb-10 mt-10">
             <div class="bg-neutral-800 border border-neutral-700 rounded-xl p-4 text-center shadow">
-                <p class="text-4xl font-bold text-white"><?= $f['wins'] ?></p>
+                <p class="text-4xl font-bold"><?= $f['wins'] ?></p>
                 <p class="text-neutral-400">Vitórias</p>
             </div>
 
             <div class="bg-neutral-800 border border-neutral-700 rounded-xl p-4 text-center shadow">
-                <p class="text-4xl font-bold text-white"><?= $f['losses'] ?></p>
+                <p class="text-4xl font-bold"><?= $f['losses'] ?></p>
                 <p class="text-neutral-400">Derrotas</p>
             </div>
 
             <div class="bg-neutral-800 border border-neutral-700 rounded-xl p-4 text-center shadow">
-                <p class="text-4xl font-bold text-white">0</p>
+                <p class="text-4xl font-bold">0</p>
                 <p class="text-neutral-400">Empates</p>
             </div>
         </div>
@@ -111,22 +121,22 @@ $isChampion = ($f['wins'] > 20 && ($f['wins'] - $f['losses']) > 10);
         <!-- ESTATÍSTICAS FÍSICAS -->
         <div class="grid grid-cols-2 gap-4">
             <div class="bg-neutral-800 border border-neutral-700 rounded-xl p-4 shadow">
-                <p class="text-xl font-bold text-white"><?= $f['age'] ?> anos</p>
+                <p class="text-xl font-bold"><?= $f['age'] ?> anos</p>
                 <p class="text-neutral-400">Idade</p>
             </div>
 
             <div class="bg-neutral-800 border border-neutral-700 rounded-xl p-4 shadow">
-                <p class="text-xl font-bold text-white"><?= $f['height'] ?> m</p>
+                <p class="text-xl font-bold"><?= $f['height'] ?> m</p>
                 <p class="text-neutral-400">Altura</p>
             </div>
 
             <div class="bg-neutral-800 border border-neutral-700 rounded-xl p-4 shadow">
-                <p class="text-xl font-bold text-white"><?= $f['reach'] ?> cm</p>
+                <p class="text-xl font-bold"><?= $f['reach'] ?> cm</p>
                 <p class="text-neutral-400">Alcance</p>
             </div>
 
             <div class="bg-neutral-800 border border-neutral-700 rounded-xl p-4 shadow">
-                <p class="text-xl font-bold text-white">96%</p>
+                <p class="text-xl font-bold">96%</p>
                 <p class="text-neutral-400">Eficácia</p>
             </div>
         </div>
@@ -136,7 +146,7 @@ $isChampion = ($f['wins'] > 20 && ($f['wins'] - $f['losses']) > 10);
 
 <!-- HISTÓRICO -->
 <section class="max-w-6xl mx-auto px-6 py-16">
-    <h2 class="text-4xl font-bold mb-6 text-white">Histórico de Lutas</h2>
+    <h2 class="text-4xl font-bold mb-6">Histórico de Lutas</h2>
 
     <?php if ($history && $history->num_rows > 0): ?>
         <div class="space-y-6">
@@ -150,7 +160,7 @@ $isChampion = ($f['wins'] > 20 && ($f['wins'] - $f['losses']) > 10);
                         <?php endif; ?>
 
                         <div>
-                            <p class="text-xl font-bold text-white"><?= $f['name'] ?> vs <?= $h['opponent_name'] ?></p>
+                            <p class="text-xl font-bold"><?= $f['name'] ?> vs <?= $h['opponent_name'] ?></p>
                             <p class="text-neutral-400"><?= $h['event_name'] ?> — <?= date("d/m/Y", strtotime($h['fight_date'])) ?></p>
                             <p class="text-neutral-500 text-sm"><?= $h['method'] ?> • Round <?= $h['round_number'] ?> • <?= $h['time'] ?></p>
                         </div>
