@@ -1,18 +1,16 @@
 <?php
-session_start();
-include "db.php";
+require_once "auth.php";
 
-if (!isset($_SESSION['user_id'])) exit("Acesso negado.");
-
-$user_id = $_SESSION['user_id'];
-$role = $conn->query("SELECT role FROM users WHERE id=$user_id")->fetch_assoc()['role'];
-if ($role !== 'admin') exit("Acesso negado.");
+$user_id = requireAdmin($conn);
 
 if (!isset($_GET['id'])) exit("ID inválido.");
 
-$id = intval($_GET['id']);
+$id = (int)$_GET['id'];
 
-$conn->query("DELETE FROM events WHERE id=$id");
+$stmt = $conn->prepare("DELETE FROM events WHERE id = ?");
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$stmt->close();
 
 header("Location: admin_events.php");
 exit;
