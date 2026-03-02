@@ -1,105 +1,84 @@
-<?php
+﻿<?php
 session_start();
+include "security.php";
 ?>
 <!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contacte-nos | MMA 360</title>
-
-    <!-- Tailwind -->
+    <title>Contacto | MMA 360</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Fontes -->
-    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        h1,h2,h3 { font-family: 'Teko', sans-serif; }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/site.css">
 </head>
+<body class="text-neutral-100">
 
-<body class="min-h-screen bg-gradient-to-br from-neutral-900 via-slate-800 to-neutral-900 text-neutral-100 relative">
-
-<!-- Fundo -->
-<div class="absolute inset-0">
-    <img src="https://cdn.vox-cdn.com/uploads/chorus_image/image/72857030/1254763496.0.jpg" 
-         class="w-full h-full object-cover opacity-15">
-    <div class="absolute inset-0 bg-gradient-to-t from-neutral-900 via-neutral-900/80 to-neutral-900/40"></div>
-</div>
-
-<!-- NAVBAR (IGUAL À PÁGINA PRINCIPAL) -->
-<nav class="fixed top-0 w-full z-40 bg-neutral-900/70 backdrop-blur border-b border-neutral-700">
+<nav class="fixed top-0 w-full z-40 backdrop-blur border-b border-neutral-700">
     <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-
         <a href="index.php" class="flex items-center gap-3">
-            <img src="pf-removebg-preview.png" class="h-10">
+            <img src="pf-removebg-preview.png" class="h-10" alt="Logo MMA 360">
             <span class="text-xl font-semibold tracking-widest text-red-500">MMA 360</span>
         </a>
 
         <ul class="hidden md:flex gap-8 text-sm uppercase tracking-wide">
-            <li><a href="index.php" class="hover:text-red-500 transition">Início</a></li>
-            <li><a href="noticias.php" class="hover:text-red-500 transition">Notícias</a></li>
-            <li><a href="about.php" class="hover:text-red-500 transition">Quem Somos</a></li>
-            <li><a href="fighters.php" class="hover:text-red-500 transition">Lutadores</a></li>
-            <li><a href="eventos.php" class="hover:text-red-500 transition">Eventos</a></li>
-            <li><a href="contacto.php" class="text-red-500">Contacto</a></li>
-            <li><a href="login.php" class="hover:text-red-500 transition">Login</a></li>
+            <li><a href="index.php" class="hover:text-red-400 transition">Início</a></li>
+            <li><a href="noticias.php" class="hover:text-red-400 transition">Notícias</a></li>
+            <li><a href="about.php" class="hover:text-red-400 transition">Quem Somos</a></li>
+            <li><a href="fighters.php" class="hover:text-red-400 transition">Lutadores</a></li>
+            <li><a href="eventos.php" class="hover:text-red-400 transition">Eventos</a></li>
+            <li><a href="contacto.php" class="text-red-400">Contacto</a></li>
+            <li><a href="login.php" class="hover:text-red-400 transition">Login</a></li>
         </ul>
-
     </div>
 </nav>
 
-<!-- CONTACT SECTION -->
-<section class="relative py-24 px-6 max-w-3xl mx-auto">
-    <h1 class="text-4xl font-bold text-red-600 mb-10 text-center tracking-widest">Contacte-nos</h1>
+<main class="pt-28 pb-16 max-w-5xl mx-auto px-6">
+    <header class="max-w-2xl mb-8">
+        <h1 class="text-6xl text-red-400 mb-4">Fala connosco</h1>
+        <p class="text-neutral-300">Partilha dúvidas, propostas de parceria ou sugestões para melhorar a plataforma.</p>
+    </header>
 
-    <div class="bg-neutral-800 p-10 rounded-2xl shadow-lg relative z-10">
-        <?php if (isset($_SESSION['success'])) { ?>
-            <p class="text-green-500 mb-4"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></p>
-        <?php } ?>
-        <?php if (isset($_SESSION['error'])) { ?>
-            <p class="text-red-500 mb-4"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></p>
-        <?php } ?>
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+        <section class="lg:col-span-3 bg-neutral-800 border border-neutral-700 rounded-2xl p-8">
+            <?php if (isset($_SESSION['success'])): ?>
+                <p class="bg-green-600 text-white px-4 py-3 rounded mb-5"><?= e($_SESSION['success']); unset($_SESSION['success']); ?></p>
+            <?php endif; ?>
+            <?php if (isset($_SESSION['error'])): ?>
+                <p class="bg-red-600 text-white px-4 py-3 rounded mb-5"><?= e($_SESSION['error']); unset($_SESSION['error']); ?></p>
+            <?php endif; ?>
 
-        <form method="POST" action="submit_contact.php" class="space-y-6">
-            <div>
-                <label class="block text-lg mb-1 text-neutral-300">Nome</label>
-                <input type="text" name="name" required
-                       class="w-full p-3 rounded bg-neutral-900 border border-neutral-700 focus:outline-none focus:border-red-600">
-            </div>
+            <form method="POST" action="submit_contact.php" class="space-y-5">
+                <?= csrf_field(); ?>
+                <div>
+                    <label class="block text-sm uppercase tracking-wide text-neutral-400 mb-2">Nome</label>
+                    <input type="text" name="name" required class="w-full px-4 py-3">
+                </div>
+                <div>
+                    <label class="block text-sm uppercase tracking-wide text-neutral-400 mb-2">Email</label>
+                    <input type="email" name="email" required class="w-full px-4 py-3">
+                </div>
+                <div>
+                    <label class="block text-sm uppercase tracking-wide text-neutral-400 mb-2">Mensagem</label>
+                    <textarea name="message" rows="5" required class="w-full px-4 py-3"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-red-600 py-3 rounded-lg text-lg">Enviar Mensagem</button>
+            </form>
+        </section>
 
-            <div>
-                <label class="block text-lg mb-1 text-neutral-300">Email</label>
-                <input type="email" name="email" required
-                       class="w-full p-3 rounded bg-neutral-900 border border-neutral-700 focus:outline-none focus:border-red-600">
-            </div>
-
-            <div>
-                <label class="block text-lg mb-1 text-neutral-300">Mensagem</label>
-                <textarea name="message" rows="5" required
-                          class="w-full p-3 rounded bg-neutral-900 border border-neutral-700 focus:outline-none focus:border-red-600"></textarea>
-            </div>
-
-            <button type="submit" class="w-full bg-red-600 py-3 text-xl rounded hover:bg-red-700 transition tracking-widest">
-                Enviar Mensagem
-            </button>
-        </form>
+        <aside class="lg:col-span-2 bg-neutral-800 border border-neutral-700 rounded-2xl p-8">
+            <h2 class="text-3xl mb-4">Informação</h2>
+            <p class="text-neutral-300 mb-4">Respondemos normalmente em 24h em dias úteis.</p>
+            <p class="text-neutral-300 mb-2"><strong>Email:</strong> mma360@gmail.com</p>
+            <p class="text-neutral-300 mb-6"><strong>Foco:</strong> eventos, media e comunidade MMA.</p>
+            <a href="about.php" class="text-red-400 hover:text-red-300">Conhecer a equipa</a>
+        </aside>
     </div>
-</section>
+</main>
 
-<!-- FOOTER -->
-<footer class="relative bg-neutral-900 border-t border-red-600 py-12 text-center mt-16">
-    <p class="text-neutral-300 mb-4 text-lg">Email: mma360@gmail.com</p>
-
-    <div class="flex justify-center gap-6 mb-6 text-lg">
-        <a href="#" class="text-red-600 hover:text-red-700 transition">Twitter</a>
-        <a href="#" class="text-red-600 hover:text-red-700 transition">Instagram</a>
-        <a href="#" class="text-red-600 hover:text-red-700 transition">Facebook</a>
-    </div>
-
-    <p class="text-neutral-500">© 2025 MMA 360 — Todos os direitos reservados</p>
+<footer class="border-t border-neutral-700 py-10 text-center">
+    <p class="text-neutral-300 text-lg">mma360@gmail.com</p>
+    <p class="mt-4 text-neutral-500 text-sm">© 2026 MMA 360 - Todos os direitos reservados</p>
 </footer>
 
 </body>

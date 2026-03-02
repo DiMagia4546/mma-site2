@@ -1,5 +1,6 @@
-<?php
+﻿<?php
 session_start();
+include "security.php";
 ?>
 <!DOCTYPE html>
 <html lang="pt">
@@ -7,95 +8,71 @@ session_start();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sobre Nós | MMA 360</title>
-
-    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Fontes -->
-    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        h1,h2,h3 { font-family: 'Teko', sans-serif; }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/site.css">
 </head>
+<body class="text-neutral-100">
 
-<body class="min-h-screen bg-gradient-to-br from-neutral-900 via-slate-800 to-neutral-900 text-neutral-100 relative">
-
-<!-- Fundo -->
-<div class="absolute inset-0">
-    <img src="https://cdn.vox-cdn.com/uploads/chorus_image/image/72857030/1254763496.0.jpg" 
-         class="w-full h-full object-cover opacity-15">
-    <div class="absolute inset-0 bg-gradient-to-t from-neutral-900 via-neutral-900/80 to-neutral-900/40"></div>
-</div>
-
-<!-- NAVBAR (IGUAL À PÁGINA PRINCIPAL) -->
-<nav class="fixed top-0 w-full z-40 bg-neutral-900/70 backdrop-blur border-b border-neutral-700">
+<nav class="fixed top-0 w-full z-40 backdrop-blur border-b border-neutral-700">
     <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-
         <a href="index.php" class="flex items-center gap-3">
-            <img src="pf-removebg-preview.png" class="h-10">
+            <img src="pf-removebg-preview.png" class="h-10" alt="Logo MMA 360">
             <span class="text-xl font-semibold tracking-widest text-red-500">MMA 360</span>
         </a>
 
         <ul class="hidden md:flex gap-8 text-sm uppercase tracking-wide">
-            <li><a href="index.php" class="hover:text-red-500 transition">Início</a></li>
-            <li><a href="noticias.php" class="hover:text-red-500 transition">Notícias</a></li>
-            <li><a href="about.php" class="hover:text-red-500 transition">Quem Somos</a></li>
-            <li><a href="fighters.php" class="text-red-500">Lutadores</a></li>
-            <li><a href="eventos.php" class="hover:text-red-500 transition">Eventos</a></li>
-            <li><a href="contacto.php" class="hover:text-red-500 transition">Contacto</a></li>
-            <li><a href="login.php" class="hover:text-red-500 transition">Login</a></li>
+            <li><a href="index.php" class="hover:text-red-400 transition">Início</a></li>
+            <li><a href="noticias.php" class="hover:text-red-400 transition">Notícias</a></li>
+            <li><a href="about.php" class="text-red-400">Quem Somos</a></li>
+            <li><a href="fighters.php" class="hover:text-red-400 transition">Lutadores</a></li>
+            <li><a href="eventos.php" class="hover:text-red-400 transition">Eventos</a></li>
+            <li><a href="contacto.php" class="hover:text-red-400 transition">Contacto</a></li>
+            <li><a href="login.php" class="hover:text-red-400 transition">Login</a></li>
         </ul>
-
     </div>
 </nav>
 
-<!-- ABOUT SECTION -->
-<section class="relative py-24 px-6 max-w-7xl mx-auto">
-    <div class="text-center mb-16">
-        <h1 class="text-5xl font-bold text-red-600 mb-6 tracking-widest">Sobre Nós</h1>
-        <p class="text-lg text-neutral-300 max-w-3xl mx-auto">
-            A nossa missão é dar visibilidade e força às organizações de artes marciais mistas de menor dimensão. 
-            Trabalhamos para promover academias locais e projetos independentes, oferecendo espaço para que atletas 
-            e treinadores possam crescer e mostrar o seu talento.
+<main class="pt-28 pb-16 max-w-7xl mx-auto px-6">
+    <header class="max-w-4xl mb-10">
+        <h1 class="text-6xl text-red-400 mb-4">Construído para elevar o MMA</h1>
+        <p class="text-lg text-neutral-300">
+            O MMA 360 nasceu para juntar informação desportiva, gestão de conteúdo e experiência visual profissional num só ecossistema.
+            A nossa missão é dar visibilidade real a atletas, eventos e comunidades locais.
         </p>
-        <p class="text-lg text-neutral-300 max-w-3xl mx-auto mt-4">
-            Desde iniciantes a lutadores profissionais, fornecemos treino personalizado, instalações de última geração 
-            e uma comunidade de apoio para dominar no ringue.
+    </header>
+
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <article class="bg-neutral-800 border border-neutral-700 rounded-2xl p-6">
+            <h2 class="text-3xl mb-3">Missão</h2>
+            <p class="text-neutral-300">Criar uma referência digital para acompanhamento de MMA com dados fiáveis e design de alto nível.</p>
+        </article>
+        <article class="bg-neutral-800 border border-neutral-700 rounded-2xl p-6">
+            <h2 class="text-3xl mb-3">Comunidade</h2>
+            <p class="text-neutral-300">Apoiar treinadores, atletas e fãs com ferramentas que aproximam a modalidade do público.</p>
+        </article>
+        <article class="bg-neutral-800 border border-neutral-700 rounded-2xl p-6">
+            <h2 class="text-3xl mb-3">Evolução</h2>
+            <p class="text-neutral-300">Atualizações contínuas para melhorar performance, segurança e experiência do utilizador.</p>
+        </article>
+    </section>
+
+    <section class="bg-neutral-800 border border-neutral-700 rounded-2xl p-8">
+        <h2 class="text-4xl mb-4">Foco Estratégico</h2>
+        <p class="text-neutral-300 mb-4">
+            Trabalhamos com uma abordagem orientada a produto: dados claros, visual consistente e funcionalidades úteis para quem acompanha ou gere MMA.
         </p>
-    </div>
+        <ul class="text-neutral-300 space-y-2">
+            <li>Gestão de eventos e cards de luta com workflow administrativo.</li>
+            <li>Perfis de atletas com histórico e métricas relevantes.</li>
+            <li>Área de utilizador com favoritos, atividade e personalização.</li>
+        </ul>
+    </section>
+</main>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div class="bg-neutral-800 p-8 rounded-2xl shadow-lg hover:scale-105 transition">
-            <h3 class="text-2xl font-bold mb-3 text-red-600">Oportunidades para Organizações</h3>
-            <p class="text-neutral-300">
-                Criamos iniciativas que ajudam na divulgação de eventos locais, promovemos competições regionais 
-                e oferecemos ferramentas para que as organizações possam alcançar mais público e reconhecimento.
-            </p>
-        </div>
-
-        <div class="bg-neutral-800 p-8 rounded-2xl shadow-lg hover:scale-105 transition">
-            <h3 class="text-2xl font-bold mb-3 text-red-600">Nossa Filosofia</h3>
-            <p class="text-neutral-300">
-                Acreditamos na disciplina, no trabalho árduo e na melhoria contínua. Nosso objetivo é apoiar 
-                organizações menores, criar oportunidades e ajudar os atletas a alcançar novos patamares.
-            </p>
-        </div>
-    </div>
-</section>
-
-<!-- FOOTER -->
-<footer class="relative bg-neutral-900 border-t border-red-600 py-12 text-center mt-16">
-    <p class="text-neutral-300 mb-4 text-lg">Email: mma360@gmail.com</p>
-
-    <div class="flex justify-center gap-6 mb-6 text-lg">
-        <a href="#" class="text-red-600 hover:text-red-700 transition">Twitter</a>
-        <a href="#" class="text-red-600 hover:text-red-700 transition">Instagram</a>
-        <a href="#" class="text-red-600 hover:text-red-700 transition">Facebook</a>
-    </div>
-
-    <p class="text-neutral-500">© 2025 MMA 360 — Todos os direitos reservados</p>
+<footer class="border-t border-neutral-700 py-10 text-center">
+    <p class="text-neutral-300 text-lg">mma360@gmail.com</p>
+    <p class="mt-4 text-neutral-500 text-sm">© 2026 MMA 360 - Todos os direitos reservados</p>
 </footer>
 
 </body>
