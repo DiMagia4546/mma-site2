@@ -2,6 +2,7 @@
 session_start();
 include "db.php";
 include "security.php";
+include "mailer.php";
 
 $error = "";
 $success = "";
@@ -36,6 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             if ($stmt->execute()) {
                 $success = "Conta criada com sucesso! Já podes fazer login.";
+                send_welcome_email($name, $email);
             } else {
                 $error = "Erro ao criar conta.";
             }

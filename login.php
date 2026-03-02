@@ -21,8 +21,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         if (password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = (int) $user['id'];
+            $_SESSION['role'] = $user['role'] ?? 'user';
+            $_SESSION['user_name'] = $user['name'] ?? '';
+            $_SESSION['user_email'] = $user['email'] ?? '';
+            $_SESSION['user_profile_pic'] = $user['profile_pic'] ?? '';
             session_regenerate_id(true);
-            header("Location: dashboard.php");
+            header("Location: index.php");
             exit;
         }
 

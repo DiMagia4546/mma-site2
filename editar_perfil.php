@@ -43,6 +43,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $user['name'] = $name;
                 $user['email'] = $email;
                 $user['profile_pic'] = $profile_pic;
+                $_SESSION['user_name'] = $name;
+                $_SESSION['user_email'] = $email;
+                $_SESSION['user_profile_pic'] = $profile_pic;
             } else {
                 $error = "Erro ao atualizar perfil.";
             }

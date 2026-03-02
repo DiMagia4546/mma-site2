@@ -2,6 +2,7 @@
 session_start();
 include "db.php";
 include "security.php";
+include "favorites_helper.php";
 
 if (!isset($_GET["id"])) {
     die("Lutador nao encontrado.");
@@ -28,6 +29,16 @@ $history = $stmtHistory->get_result();
 $stmtHistory->close();
 
 $isChampion = ((int) $f["wins"] > 20 && ((int) $f["wins"] - (int) $f["losses"]) > 10);
+$isFavorite = false;
+if (isset($_SESSION["user_id"])) {
+    $favTable = favoritesTable($conn);
+    $user_id = (int) $_SESSION["user_id"];
+    $stmtFav = $conn->prepare("SELECT id FROM {$favTable} WHERE user_id = ? AND fighter_id = ? LIMIT 1");
+    $stmtFav->bind_param("ii", $user_id, $fighter_id);
+    $stmtFav->execute();
+    $isFavorite = (bool) $stmtFav->get_result()->fetch_assoc();
+    $stmtFav->close();
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt">
@@ -45,6 +56,7 @@ $isChampion = ((int) $f["wins"] > 20 && ((int) $f["wins"] - (int) $f["losses"]) 
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/site.css">
+    <script src="assets/account-menu.js" defer></script>
 </head>
 
 <body class="bg-neutral-900 text-neutral-100">
@@ -63,7 +75,35 @@ $isChampion = ((int) $f["wins"] > 20 && ((int) $f["wins"] - (int) $f["losses"]) 
             <li><a href="fighters.php" class="text-red-500">Lutadores</a></li>
             <li><a href="eventos.php" class="hover:text-red-500 transition">Eventos</a></li>
             <li><a href="contacto.php" class="hover:text-red-500 transition">Contacto</a></li>
-            <li><a href="login.php" class="hover:text-red-500 transition">Login</a></li>
+            <?php if (isset($_SESSION['user_id'])): ?>
+                <?php
+                $displayName = $_SESSION['user_name'] ?? 'Conta';
+                $displayEmail = $_SESSION['user_email'] ?? '';
+                $displayPic = $_SESSION['user_profile_pic'] ?? '';
+                $initial = strtoupper(substr(trim($displayName) ?: 'U', 0, 1));
+                ?>
+                <li class="relative account-menu">
+                    <button type="button" class="account-menu-toggle flex items-center gap-2 text-neutral-100 hover:text-red-500 transition">
+                        <?php if (!empty($displayPic)): ?>
+                            <img src="<?= e($displayPic) ?>" class="w-9 h-9 rounded-full object-cover border border-red-500" alt="Perfil">
+                        <?php else: ?>
+                            <span class="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center text-sm font-bold"><?= e($initial) ?></span>
+                        <?php endif; ?>
+                        <span class="hidden lg:block normal-case text-sm"><?= e($displayName) ?></span>
+                    </button>
+
+                    <div class="account-menu-panel hidden absolute right-0 top-12 w-72 bg-neutral-900/95 border border-neutral-700 rounded-xl shadow-2xl overflow-hidden normal-case">
+                        <div class="px-4 py-3 border-b border-neutral-700">
+                            <p class="text-sm font-semibold text-white"><?= e($displayName) ?></p>
+                            <p class="text-xs text-neutral-400"><?= e($displayEmail) ?></p>
+                        </div>
+                        <a href="dashboard.php" class="block px-4 py-3 text-sm hover:bg-neutral-800">Dashboard</a>
+                        <a href="logout.php" class="block px-4 py-3 text-sm text-red-500 hover:bg-neutral-800">Terminar Sessão</a>
+                    </div>
+                </li>
+            <?php else: ?>
+                <li><a href="login.php" class="hover:text-red-500 transition">Login</a></li>
+            <?php endif; ?>
         </ul>
     </div>
 </nav>
@@ -95,7 +135,11 @@ $isChampion = ((int) $f["wins"] > 20 && ((int) $f["wins"] - (int) $f["losses"]) 
         <form method="POST" action="toggle_favorite.php">
             <?= csrf_field(); ?>
             <input type="hidden" name="fighter_id" value="<?= (int) $f["id"] ?>">
-            <button class="mt-6 bg-red-600 px-6 py-3 rounded-lg hover:bg-red-700 transition">Adicionar aos Favoritos</button>
+            <?php if ($isFavorite): ?>
+                <button class="mt-6 bg-neutral-700 px-6 py-3 rounded-lg hover:bg-neutral-600 transition">Remover dos Favoritos</button>
+            <?php else: ?>
+                <button class="mt-6 bg-red-600 px-6 py-3 rounded-lg hover:bg-red-700 transition">Adicionar aos Favoritos</button>
+            <?php endif; ?>
         </form>
         <?php endif; ?>
 

@@ -86,7 +86,7 @@ $total_fights = (int) ($conn->query("SELECT COUNT(*) AS total FROM event_fights"
 
     <h2 class="text-4xl font-bold mb-4">Gestão</h2>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
         <a href="admin_fighters.php" class="bg-neutral-800 p-6 rounded-xl border border-neutral-700 hover:bg-neutral-700 transition">
             <p class="text-3xl font-bold">Lutadores</p>
             <p class="text-neutral-400 text-sm mt-2">Ver, editar, eliminar e criar novos lutadores.</p>
@@ -101,11 +101,16 @@ $total_fights = (int) ($conn->query("SELECT COUNT(*) AS total FROM event_fights"
             <p class="text-3xl font-bold">Utilizadores</p>
             <p class="text-neutral-400 text-sm mt-2">Gerir contas, roles e acessos.</p>
         </a>
+
+        <a href="admin_news.php" class="bg-neutral-800 p-6 rounded-xl border border-neutral-700 hover:bg-neutral-700 transition">
+            <p class="text-3xl font-bold">Notícias</p>
+            <p class="text-neutral-400 text-sm mt-2">Criar e acompanhar notícias da plataforma.</p>
+        </a>
     </div>
 
     <h2 class="text-4xl font-bold mb-4">Criação Rápida</h2>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <a href="add_fighter.php" class="bg-neutral-800 p-6 rounded-xl border border-neutral-700 hover:bg-neutral-700 transition">
             <p class="text-2xl font-bold">Novo Lutador</p>
             <p class="text-neutral-400 text-sm mt-2">Adicionar um novo atleta ao roster.</p>
@@ -114,6 +119,11 @@ $total_fights = (int) ($conn->query("SELECT COUNT(*) AS total FROM event_fights"
         <a href="add_event.php" class="bg-neutral-800 p-6 rounded-xl border border-neutral-700 hover:bg-neutral-700 transition">
             <p class="text-2xl font-bold">Novo Evento</p>
             <p class="text-neutral-400 text-sm mt-2">Criar um novo evento com fight card.</p>
+        </a>
+
+        <a href="admin_news.php" class="bg-neutral-800 p-6 rounded-xl border border-neutral-700 hover:bg-neutral-700 transition">
+            <p class="text-2xl font-bold">Nova Notícia</p>
+            <p class="text-neutral-400 text-sm mt-2">Publicar artigo com imagem para a homepage editorial.</p>
         </a>
     </div>
 

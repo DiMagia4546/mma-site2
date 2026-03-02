@@ -58,7 +58,9 @@ $activity = $stmtActivity->get_result();
         h1, h2, h3 { font-family: 'Teko', sans-serif; }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/site.css"></head>
+    <link rel="stylesheet" href="assets/site.css">
+    <script src="assets/account-menu.js" defer></script>
+</head>
 
 <body class="bg-neutral-900 text-neutral-100">
 
@@ -70,9 +72,37 @@ $activity = $stmtActivity->get_result();
         </a>
 
         <ul class="hidden md:flex gap-8 text-sm uppercase tracking-wide">
+            <li><a href="index.php" class="hover:text-red-500 transition">Início</a></li>
+            <li><a href="noticias.php" class="hover:text-red-500 transition">Notícias</a></li>
+            <li><a href="about.php" class="hover:text-red-500 transition">Quem Somos</a></li>
             <li><a href="fighters.php" class="hover:text-red-500 transition">Lutadores</a></li>
             <li><a href="eventos.php" class="hover:text-red-500 transition">Eventos</a></li>
-            <li><a href="logout.php" class="text-red-500">Logout</a></li>
+            <li><a href="contacto.php" class="hover:text-red-500 transition">Contacto</a></li>
+            <?php
+            $displayName = $_SESSION['user_name'] ?? ($user['name'] ?? 'Conta');
+            $displayEmail = $_SESSION['user_email'] ?? ($user['email'] ?? '');
+            $displayPic = $_SESSION['user_profile_pic'] ?? ($user['profile_pic'] ?? '');
+            $initial = strtoupper(substr(trim($displayName) ?: 'U', 0, 1));
+            ?>
+            <li class="relative account-menu">
+                <button type="button" class="account-menu-toggle flex items-center gap-2 text-neutral-100 hover:text-red-500 transition normal-case">
+                    <?php if (!empty($displayPic)): ?>
+                        <img src="<?= e($displayPic) ?>" class="w-9 h-9 rounded-full object-cover border border-red-500" alt="Perfil">
+                    <?php else: ?>
+                        <span class="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center text-sm font-bold"><?= e($initial) ?></span>
+                    <?php endif; ?>
+                    <span class="hidden lg:block text-sm"><?= e($displayName) ?></span>
+                </button>
+
+                <div class="account-menu-panel hidden absolute right-0 top-12 w-72 bg-neutral-900/95 border border-neutral-700 rounded-xl shadow-2xl overflow-hidden normal-case">
+                    <div class="px-4 py-3 border-b border-neutral-700">
+                        <p class="text-sm font-semibold text-white"><?= e($displayName) ?></p>
+                        <p class="text-xs text-neutral-400"><?= e($displayEmail) ?></p>
+                    </div>
+                    <a href="dashboard.php" class="block px-4 py-3 text-sm hover:bg-neutral-800">Dashboard</a>
+                    <a href="logout.php" class="block px-4 py-3 text-sm text-red-500 hover:bg-neutral-800">Terminar Sessão</a>
+                </div>
+            </li>
         </ul>
     </div>
 </nav>
