@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 23-Fev-2026 às 08:34
+-- Tempo de geração: 02-Mar-2026 às 12:54
 -- Versão do servidor: 10.4.32-MariaDB
--- versão do PHP: 8.1.25
+-- versão do PHP: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -221,7 +221,7 @@ CREATE TABLE `users` (
   `name` varchar(100) NOT NULL,
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `role` enum('user','admin') DEFAULT 'user',
+  `role` enum('user','admin') NOT NULL DEFAULT 'user',
   `profile_pic` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -231,8 +231,20 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `password`, `role`, `profile_pic`, `created_at`) VALUES
-(1, 'Admin', 'admin@example.com', '$2y$10$examplehashedpassword', 'admin', NULL, '2026-01-19 15:31:26'),
-(2, 'User', 'user@example.com', '$2y$10$examplehashedpassword', 'user', NULL, '2026-01-19 15:31:26');
+(3, 'Admin', 'admin@mma360.com', '$2y$10$Q0u1WQ8pYtYgYpYpYpYpOe6Qx7Qx7Qx7Qx7Qx7Qx7Qx7Qx7Qx7', 'admin', NULL, '2026-02-27 11:17:40');
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura da tabela `user_activity`
+--
+
+CREATE TABLE `user_activity` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `action` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Índices para tabelas despejadas
@@ -297,6 +309,12 @@ ALTER TABLE `users`
   ADD UNIQUE KEY `email` (`email`);
 
 --
+-- Índices para tabela `user_activity`
+--
+ALTER TABLE `user_activity`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- AUTO_INCREMENT de tabelas despejadas
 --
 
@@ -346,7 +364,13 @@ ALTER TABLE `news`
 -- AUTO_INCREMENT de tabela `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT de tabela `user_activity`
+--
+ALTER TABLE `user_activity`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- Restrições para despejos de tabelas
@@ -356,7 +380,6 @@ ALTER TABLE `users`
 -- Limitadores para a tabela `comments`
 --
 ALTER TABLE `comments`
-  ADD CONSTRAINT `comments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
   ADD CONSTRAINT `comments_ibfk_2` FOREIGN KEY (`news_id`) REFERENCES `news` (`id`),
   ADD CONSTRAINT `comments_ibfk_3` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
 
@@ -370,7 +393,6 @@ ALTER TABLE `event_fights`
 -- Limitadores para a tabela `favorites`
 --
 ALTER TABLE `favorites`
-  ADD CONSTRAINT `favorites_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
   ADD CONSTRAINT `favorites_ibfk_2` FOREIGN KEY (`fighter_id`) REFERENCES `fighters` (`id`),
   ADD CONSTRAINT `favorites_ibfk_3` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
 
@@ -379,12 +401,6 @@ ALTER TABLE `favorites`
 --
 ALTER TABLE `fighter_history`
   ADD CONSTRAINT `fighter_history_ibfk_1` FOREIGN KEY (`fighter_id`) REFERENCES `fighters` (`id`) ON DELETE CASCADE;
-
---
--- Limitadores para a tabela `news`
---
-ALTER TABLE `news`
-  ADD CONSTRAINT `news_ibfk_1` FOREIGN KEY (`author_id`) REFERENCES `users` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

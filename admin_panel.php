@@ -1,25 +1,28 @@
-<?php
+﻿<?php
 session_start();
 include "db.php";
+include "security.php";
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
 
-$user_id = $_SESSION['user_id'];
-$res = $conn->query("SELECT role FROM users WHERE id=$user_id");
-$role = $res->fetch_assoc()['role'];
+$user_id = (int) $_SESSION['user_id'];
+$stmtRole = $conn->prepare("SELECT role FROM users WHERE id=? LIMIT 1");
+$stmtRole->bind_param("i", $user_id);
+$stmtRole->execute();
+$roleRow = $stmtRole->get_result()->fetch_assoc();
+$role = $roleRow['role'] ?? 'user';
 
 if ($role !== 'admin') {
     die("Acesso negado.");
 }
 
-// Estatísticas
-$total_fighters = $conn->query("SELECT COUNT(*) AS total FROM fighters")->fetch_assoc()['total'];
-$total_events   = $conn->query("SELECT COUNT(*) AS total FROM events")->fetch_assoc()['total'];
-$total_users    = $conn->query("SELECT COUNT(*) AS total FROM users")->fetch_assoc()['total'];
-$total_fights   = $conn->query("SELECT COUNT(*) AS total FROM event_fights")->fetch_assoc()['total'];
+$total_fighters = (int) ($conn->query("SELECT COUNT(*) AS total FROM fighters")->fetch_assoc()['total'] ?? 0);
+$total_events = (int) ($conn->query("SELECT COUNT(*) AS total FROM events")->fetch_assoc()['total'] ?? 0);
+$total_users = (int) ($conn->query("SELECT COUNT(*) AS total FROM users")->fetch_assoc()['total'] ?? 0);
+$total_fights = (int) ($conn->query("SELECT COUNT(*) AS total FROM event_fights")->fetch_assoc()['total'] ?? 0);
 ?>
 <!DOCTYPE html>
 <html lang="pt">
@@ -34,15 +37,15 @@ $total_fights   = $conn->query("SELECT COUNT(*) AS total FROM event_fights")->fe
         body { font-family: 'Inter', sans-serif; }
         h1, h2 { font-family: 'Teko', sans-serif; }
     </style>
-</head>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/site.css"></head>
 
 <body class="bg-neutral-900 text-neutral-100">
 
-<!-- NAVBAR (opcional, igual ao resto do site) -->
 <nav class="fixed top-0 w-full z-40 bg-neutral-900/70 backdrop-blur border-b border-neutral-700">
     <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         <a href="index.php" class="flex items-center gap-3">
-            <img src="pf-removebg-preview.png" class="h-10">
+            <img src="pf-removebg-preview.png" class="h-10" alt="Logo">
             <span class="text-xl font-semibold tracking-widest text-red-500">MMA 360</span>
         </a>
 
@@ -59,9 +62,7 @@ $total_fights   = $conn->query("SELECT COUNT(*) AS total FROM event_fights")->fe
 
     <h1 class="text-6xl font-bold text-red-500 mb-8">PAINEL ADMIN</h1>
 
-    <!-- ESTATÍSTICAS -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-
         <div class="bg-neutral-800 p-6 rounded-xl border border-neutral-700">
             <p class="text-5xl font-bold text-red-500"><?= $total_fighters ?></p>
             <p class="text-neutral-400">Lutadores</p>
@@ -81,14 +82,11 @@ $total_fights   = $conn->query("SELECT COUNT(*) AS total FROM event_fights")->fe
             <p class="text-5xl font-bold text-red-500"><?= $total_fights ?></p>
             <p class="text-neutral-400">Lutas</p>
         </div>
-
     </div>
 
-    <!-- AÇÕES PRINCIPAIS -->
     <h2 class="text-4xl font-bold mb-4">Gestão</h2>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-
         <a href="admin_fighters.php" class="bg-neutral-800 p-6 rounded-xl border border-neutral-700 hover:bg-neutral-700 transition">
             <p class="text-3xl font-bold">Lutadores</p>
             <p class="text-neutral-400 text-sm mt-2">Ver, editar, eliminar e criar novos lutadores.</p>
@@ -103,14 +101,11 @@ $total_fights   = $conn->query("SELECT COUNT(*) AS total FROM event_fights")->fe
             <p class="text-3xl font-bold">Utilizadores</p>
             <p class="text-neutral-400 text-sm mt-2">Gerir contas, roles e acessos.</p>
         </a>
-
     </div>
 
-    <!-- CRIAÇÃO RÁPIDA -->
     <h2 class="text-4xl font-bold mb-4">Criação Rápida</h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-
         <a href="add_fighter.php" class="bg-neutral-800 p-6 rounded-xl border border-neutral-700 hover:bg-neutral-700 transition">
             <p class="text-2xl font-bold">Novo Lutador</p>
             <p class="text-neutral-400 text-sm mt-2">Adicionar um novo atleta ao roster.</p>
@@ -120,16 +115,14 @@ $total_fights   = $conn->query("SELECT COUNT(*) AS total FROM event_fights")->fe
             <p class="text-2xl font-bold">Novo Evento</p>
             <p class="text-neutral-400 text-sm mt-2">Criar um novo evento com fight card.</p>
         </a>
-
     </div>
 
     <div class="mt-6">
-        <a href="dashboard.php" class="text-red-500 hover:text-red-400 text-sm uppercase tracking-[0.25em]">
-            ← Voltar ao Painel do Utilizador
-        </a>
+        <a href="dashboard.php" class="text-red-500 hover:text-red-400 text-sm uppercase tracking-[0.25em]">Voltar ao Painel do Utilizador</a>
     </div>
 
 </div>
 
 </body>
 </html>
+

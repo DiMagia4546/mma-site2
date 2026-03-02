@@ -1,18 +1,27 @@
-<?php
+﻿<?php
 session_start();
 include "db.php";
+include "security.php";
 
 if (!isset($_SESSION['user_id'])) exit("Acesso negado.");
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') exit("Método inválido.");
+verify_csrf_or_die();
 
-$user_id = $_SESSION['user_id'];
-$role = $conn->query("SELECT role FROM users WHERE id=$user_id")->fetch_assoc()['role'];
+$user_id = (int) $_SESSION['user_id'];
+$stmtRole = $conn->prepare("SELECT role FROM users WHERE id=? LIMIT 1");
+$stmtRole->bind_param("i", $user_id);
+$stmtRole->execute();
+$role = $stmtRole->get_result()->fetch_assoc()['role'] ?? 'user';
 if ($role !== 'admin') exit("Acesso negado.");
 
-if (!isset($_GET['id'])) exit("ID inválido.");
+$id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+if ($id <= 0) exit("ID inválido.");
 
-$id = intval($_GET['id']);
+if ($id === $user_id) exit("Não podes eliminar a tua conta admin em sessão.");
 
-$conn->query("DELETE FROM users WHERE id=$id");
+$stmt = $conn->prepare("DELETE FROM users WHERE id=?");
+$stmt->bind_param("i", $id);
+$stmt->execute();
 
 header("Location: admin_users.php");
 exit;
