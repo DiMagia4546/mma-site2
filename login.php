@@ -2,6 +2,9 @@
 session_start();
 include "db.php";
 
+// DEBUG TEMPORÁRIO — VERIFICAR LIGAÇÃO À BASE DE DADOS
+var_dump($conn);
+
 $error = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {

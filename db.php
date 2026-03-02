@@ -2,11 +2,12 @@
 $host = "localhost";
 $user = "root";
 $pass = "";
-$db = "mma_site";
+$dbname = "mma_site"; 
 
-$conn = new mysqli($host, $user, $pass, $db);
+$conn = new mysqli($host, $user, $pass, $dbname);
 
 if ($conn->connect_error) {
     die("Erro na ligação: " . $conn->connect_error);
 }
 ?>
+
