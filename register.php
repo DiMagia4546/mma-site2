@@ -88,7 +88,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <div class="p-10 md:p-12 bg-neutral-900">
             <div class="mb-10 text-center">
-                <img src="pf-removebg-preview.png" class="h-16 mx-auto mb-4" alt="Logo">
+                <img src="assets/logo-mma360.png.png" class="h-20 mx-auto mb-4" alt="Logo">
                 <h2 class="text-4xl font-bold tracking-widest text-slate-300">CRIAR CONTA</h2>
                 <p class="text-neutral-400 text-lg">Junta-te à plataforma</p>
             </div>
@@ -134,4 +134,5 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </body>
 </html>
+
 

@@ -18,7 +18,7 @@ include "security.php";
 <nav class="fixed top-0 w-full z-40 backdrop-blur border-b border-neutral-700">
     <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         <a href="index.php" class="flex items-center gap-3">
-            <img src="pf-removebg-preview.png" class="h-10" alt="Logo MMA 360">
+            <img src="assets/logo-mma360.png.png" class="h-12 md:h-14" alt="Logo MMA 360">
             <span class="text-xl font-semibold tracking-widest text-red-500">MMA 360</span>
         </a>
 
@@ -112,3 +112,4 @@ include "security.php";
 
 </body>
 </html>
+

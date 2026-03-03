@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 include "db.php";
 include "security.php";
@@ -64,7 +64,7 @@ if (isset($_SESSION["user_id"])) {
 <nav class="fixed top-0 w-full z-40 bg-neutral-900/70 backdrop-blur border-b border-neutral-700">
     <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         <a href="index.php" class="flex items-center gap-3">
-            <img src="pf-removebg-preview.png" class="h-10" alt="Logo">
+            <img src="assets/logo-mma360.png.png" class="h-12 md:h-14" alt="Logo">
             <span class="text-xl font-semibold tracking-widest text-red-500">MMA 360</span>
         </a>
 
@@ -98,7 +98,7 @@ if (isset($_SESSION["user_id"])) {
                             <p class="text-xs text-neutral-400"><?= e($displayEmail) ?></p>
                         </div>
                         <a href="dashboard.php" class="block px-4 py-3 text-sm hover:bg-neutral-800">Dashboard</a>
-                        <a href="logout.php" class="block px-4 py-3 text-sm text-red-500 hover:bg-neutral-800">Terminar Sessão</a>
+                        <a href="logout.php" class="block px-4 py-3 text-sm text-red-500 hover:bg-neutral-800">Terminar SessÃ£o</a>
                     </div>
                 </li>
             <?php else: ?>
@@ -221,3 +221,4 @@ if (isset($_SESSION["user_id"])) {
 
 </body>
 </html>
+

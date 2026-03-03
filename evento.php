@@ -10,6 +10,17 @@ if (!isset($_GET["id"])) {
 
 $event_id = (int) $_GET["id"];
 
+function firstExistingAsset(array $relativePaths): string
+{
+    foreach ($relativePaths as $path) {
+        if (is_file(__DIR__ . "/" . $path)) {
+            return $path;
+        }
+    }
+
+    return "";
+}
+
 $stmtEvent = $conn->prepare("SELECT * FROM events WHERE id = ? LIMIT 1");
 $stmtEvent->bind_param("i", $event_id);
 $stmtEvent->execute();
@@ -134,6 +145,60 @@ function renderFlagHtml(string $nationality): string
     return implode('', $parts);
 }
 
+function fighterStrength(?array $meta, string $name): float
+{
+    if (!$meta) {
+        $seed = abs(crc32($name)) % 100;
+        return 0.50 + (($seed - 50) / 800.0);
+    }
+
+    $wins = max(0, (int) ($meta['wins'] ?? 0));
+    $losses = max(0, (int) ($meta['losses'] ?? 0));
+    $sample = $wins + $losses;
+    $base = ($wins + 1.0) / ($sample + 2.0);
+
+    $experienceBoost = min(0.08, $sample * 0.0025);
+    $seed = abs(crc32($name)) % 100;
+    $microBias = ($seed - 50) / 1200.0;
+
+    return max(0.28, min(0.72, $base + $experienceBoost + $microBias));
+}
+
+function probToAmericanOdds(float $p): int
+{
+    $p = max(0.05, min(0.95, $p));
+    if ($p >= 0.5) {
+        return (int) round(-100 * ($p / (1 - $p)));
+    }
+
+    return (int) round(100 * ((1 - $p) / $p));
+}
+
+function formatAmericanOdds(int $odds): string
+{
+    return $odds > 0 ? '+' . $odds : (string) $odds;
+}
+
+function calculateFightOdds(?array $f1Meta, ?array $f2Meta, string $fighter1, string $fighter2): array
+{
+    $s1 = fighterStrength($f1Meta, $fighter1);
+    $s2 = fighterStrength($f2Meta, $fighter2);
+    $p1True = $s1 / ($s1 + $s2);
+    $p2True = 1 - $p1True;
+
+    // Bookmaker margin for display realism (overround ~4.5%)
+    $margin = 1.045;
+    $p1Book = min(0.95, $p1True * $margin);
+    $p2Book = min(0.95, $p2True * $margin);
+
+    return [
+        'p1' => $p1Book,
+        'p2' => $p2Book,
+        'odds1' => probToAmericanOdds($p1Book),
+        'odds2' => probToAmericanOdds($p2Book),
+    ];
+}
+
 $fightersMap = [];
 $fightersMetaRes = $conn->query("SELECT name, nationality, wins, losses FROM fighters");
 if ($fightersMetaRes) {
@@ -161,6 +226,18 @@ $stmtFights->close();
     <style>
         body { font-family: 'Inter', sans-serif; }
         h1, h2, h3 { font-family: 'Teko', sans-serif; }
+        .event-hero-wrap {
+            background-color: #04070d;
+            background-repeat: no-repeat, no-repeat, no-repeat;
+            background-size: cover, 32% auto, 32% auto;
+            background-position: center, left top, right top;
+        }
+
+        .event-hero-card {
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(2px);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/site.css">
@@ -171,8 +248,18 @@ $stmtFights->close();
 
 <nav class="fixed top-0 w-full z-40 bg-neutral-900/70 backdrop-blur border-b border-neutral-700">
     <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        <?php
+        $navLogo = firstExistingAsset([
+            "assets/logo-mma360.png",
+            "assets/logo-mma360.png.png",
+            "assets/logo-mma360.webp",
+            "assets/logo-mma360.jpg",
+            "assets/logo-mma360.jpeg",
+            "pf-removebg-preview.png",
+        ]);
+        ?>
         <a href="index.php" class="flex items-center gap-3">
-            <img src="pf-removebg-preview.png" class="h-10" alt="Logo">
+            <img src="<?= e($navLogo !== "" ? $navLogo : "assets/logo-mma360.png.png") ?>" class="h-12 md:h-14" alt="Logo">
             <span class="text-xl font-semibold tracking-widest text-red-500">MMA 360</span>
         </a>
 
@@ -218,26 +305,36 @@ $stmtFights->close();
 
 <div class="pt-24"></div>
 
-<?php $banner = !empty($event["banner"]) ? $event["banner"] : "uploads/default_banner.webp"; ?>
-<div class="w-full h-64 md:h-80 bg-cover bg-center border-b border-neutral-700"
-     style="background-image: linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0.3)), url('<?= e($banner) ?>');">
-    <div class="max-w-5xl mx-auto h-full flex flex-col justify-end px-6 pb-6">
-        <h1 class="text-6xl font-bold text-white tracking-wide"><?= e($event["name"]) ?></h1>
-        <p class="text-neutral-300 text-lg mt-2">
-            <?= e(date("d/m/Y", strtotime($event["date"]))) ?>  -  <?= e($event["location"]) ?>
-        </p>
+<?php
+$banner = !empty($event["banner"]) ? $event["banner"] : "uploads/default_banner.webp";
+$heroArt = "assets/eventos/ufc-326-hero.avif";
+$heroCornerAsset = $heroArt;
+$heroArtExists = is_file(__DIR__ . "/" . $heroArt);
+$heroBackground = $heroArtExists
+    ? "background-image: linear-gradient(180deg, rgba(3,6,12,0.94), rgba(3,6,12,0.68)), url('{$heroCornerAsset}'), url('{$heroCornerAsset}');"
+    : "background-image: linear-gradient(180deg, rgba(3,6,12,0.94), rgba(3,6,12,0.68));";
+?>
+<div class="event-hero-wrap w-full border-b border-neutral-700" style="<?= e($heroBackground) ?>">
+    <div class="max-w-5xl mx-auto px-6 py-8 md:py-10">
+        <div class="event-hero-card rounded-2xl overflow-hidden bg-cover bg-center p-6 md:p-8"
+             style="background-image: linear-gradient(to top, rgba(0,0,0,0.80), rgba(0,0,0,0.40)), url('<?= e($banner) ?>');">
+            <h1 class="text-6xl font-bold text-white tracking-wide"><?= e($event["name"]) ?></h1>
+            <p class="text-neutral-300 text-lg mt-2">
+                <?= e(date("d/m/Y", strtotime($event["date"]))) ?>  -  <?= e($event["location"]) ?>
+            </p>
 
-        <?php if (isset($_SESSION["user_id"])): ?>
-        <form method="POST" action="toggle_favorite.php">
-            <?= csrf_field(); ?>
-            <input type="hidden" name="event_id" value="<?= (int) $event["id"] ?>">
-            <?php if ($isFavorite): ?>
-                <button class="mt-4 bg-neutral-700 px-6 py-3 rounded-lg hover:bg-neutral-600 transition">Remover dos Favoritos</button>
-            <?php else: ?>
-                <button class="mt-4 bg-red-600 px-6 py-3 rounded-lg hover:bg-red-700 transition">Adicionar aos Favoritos</button>
+            <?php if (isset($_SESSION["user_id"])): ?>
+            <form method="POST" action="toggle_favorite.php">
+                <?= csrf_field(); ?>
+                <input type="hidden" name="event_id" value="<?= (int) $event["id"] ?>">
+                <?php if ($isFavorite): ?>
+                    <button class="mt-4 bg-neutral-700 px-6 py-3 rounded-lg hover:bg-neutral-600 transition">Remover dos Favoritos</button>
+                <?php else: ?>
+                    <button class="mt-4 bg-red-600 px-6 py-3 rounded-lg hover:bg-red-700 transition">Adicionar aos Favoritos</button>
+                <?php endif; ?>
+            </form>
             <?php endif; ?>
-        </form>
-        <?php endif; ?>
+        </div>
     </div>
 </div>
 
@@ -255,6 +352,7 @@ $stmtFights->close();
                 <?php
                 $f1Meta = $fightersMap[normalizeFighterKey($fight["fighter1_name"])] ?? null;
                 $f2Meta = $fightersMap[normalizeFighterKey($fight["fighter2_name"])] ?? null;
+                $odds = calculateFightOdds($f1Meta, $f2Meta, $fight["fighter1_name"], $fight["fighter2_name"]);
                 ?>
                 <div class="bg-neutral-800 border border-neutral-700 rounded-xl p-8 shadow-lg">
                     <div class="flex flex-col md:flex-row items-center justify-between gap-10">
@@ -280,6 +378,24 @@ $stmtFights->close();
                             <?php else: ?>
                                 <p class="text-sm text-neutral-500 mt-1">Dados de carreira indisponiveis</p>
                             <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-3 items-stretch">
+                        <div class="rounded-lg border border-neutral-700 bg-neutral-900/60 px-4 py-3 text-center">
+                            <p class="text-xs uppercase tracking-[0.2em] text-neutral-400">Moneyline</p>
+                            <p class="text-2xl font-bold text-white mt-1"><?= e($fight["fighter1_name"]) ?> <span class="text-red-400"><?= e(formatAmericanOdds($odds['odds1'])) ?></span></p>
+                            <p class="text-xs text-neutral-500 mt-1">Prob. implicita: <?= e((string) round($odds['p1'] * 100, 1)) ?>%</p>
+                        </div>
+
+                        <div class="rounded-lg border border-neutral-700 bg-neutral-900/40 px-4 py-3 text-center flex items-center justify-center">
+                            <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">Odds estimadas (simulacao)</p>
+                        </div>
+
+                        <div class="rounded-lg border border-neutral-700 bg-neutral-900/60 px-4 py-3 text-center">
+                            <p class="text-xs uppercase tracking-[0.2em] text-neutral-400">Moneyline</p>
+                            <p class="text-2xl font-bold text-white mt-1"><?= e($fight["fighter2_name"]) ?> <span class="text-red-400"><?= e(formatAmericanOdds($odds['odds2'])) ?></span></p>
+                            <p class="text-xs text-neutral-500 mt-1">Prob. implicita: <?= e((string) round($odds['p2'] * 100, 1)) ?>%</p>
                         </div>
                     </div>
                 </div>
