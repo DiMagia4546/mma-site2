@@ -3,9 +3,20 @@ session_start();
 include "db.php";
 include "security.php";
 include "mailer.php";
+include "auth_verification.php";
 
 $error = "";
 $success = "";
+
+ensure_auth_verification_schema($conn);
+
+function dev_show_code_on_email_fail(): bool
+{
+    if (defined('MMA_DEV_SHOW_CODE_ON_EMAIL_FAIL')) {
+        return trim((string) constant('MMA_DEV_SHOW_CODE_ON_EMAIL_FAIL')) === '1';
+    }
+    return false;
+}
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     verify_csrf_or_die();
@@ -19,8 +30,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $error = "Email inválido.";
     } elseif ($password !== $confirm) {
         $error = "As passwords não coincidem.";
-    } elseif (strlen($password) < 8) {
-        $error = "A password deve ter pelo menos 8 caracteres.";
+    } elseif (strlen($password) < 4) {
+        $error = "A password deve ter pelo menos 4 caracteres e incluir pelo menos 1 simbolo.";
+    } elseif (!preg_match('/[^a-zA-Z0-9]/', $password)) {
+        $error = "A password deve incluir pelo menos 1 simbolo (ex: ! @ # $ %).";
     } else {
         $check = $conn->prepare("SELECT id FROM users WHERE email=?");
         $check->bind_param("s", $email);
@@ -31,13 +44,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $error = "Este email já está registado.";
         } else {
             $hashed = password_hash($password, PASSWORD_DEFAULT);
+            $pendingId = upsert_pending_registration($conn, $name, $email, $hashed);
 
-            $stmt = $conn->prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'user')");
-            $stmt->bind_param("sss", $name, $email, $hashed);
-
-            if ($stmt->execute()) {
-                $success = "Conta criada com sucesso! Já podes fazer login.";
-                send_welcome_email($name, $email);
+            if ($pendingId > 0) {
+                $code = create_auth_code($conn, $pendingId, 'register_pending', 600);
+                if (!send_auth_code_email($name, $email, $code, 'register')) {
+                    if (dev_show_code_on_email_fail()) {
+                        $_SESSION['pending_register_id'] = $pendingId;
+                        $_SESSION['pending_verify_email'] = $email;
+                        $_SESSION['pending_verify_name'] = $name;
+                        $_SESSION['dev_auth_code_register'] = $code;
+                        header("Location: verify_code.php?flow=register");
+                        exit;
+                    }
+                    $cleanupCodes = $conn->prepare("DELETE FROM pending_auth_codes WHERE pending_id = ? AND purpose = 'register_pending'");
+                    $cleanupCodes->bind_param("i", $pendingId);
+                    $cleanupCodes->execute();
+                    $cleanupCodes->close();
+                    $error = "Nao foi possivel enviar o codigo para o email. A conta nao foi criada. Confirma o SMTP e tenta novamente.";
+                } else {
+                    $_SESSION['pending_register_id'] = $pendingId;
+                    $_SESSION['pending_verify_email'] = $email;
+                    $_SESSION['pending_verify_name'] = $name;
+                    header("Location: verify_code.php?flow=register");
+                    exit;
+                }
             } else {
                 $error = "Erro ao criar conta.";
             }
@@ -116,12 +147,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 <div>
                     <label class="block text-lg mb-1 text-neutral-300">Password</label>
-                    <input type="password" name="password" required class="w-full px-4 py-3 rounded bg-neutral-800 border border-neutral-700 focus:outline-none focus:border-slate-500">
+                    <div class="relative">
+                        <input id="register-password" type="password" name="password" required class="w-full px-4 py-3 pr-14 rounded bg-neutral-800 border border-neutral-700 focus:outline-none focus:border-slate-500">
+                        <button type="button" data-toggle-target="register-password" class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200 text-sm">Mostrar</button>
+                    </div>
                 </div>
 
                 <div>
                     <label class="block text-lg mb-1 text-neutral-300">Confirmar Password</label>
-                    <input type="password" name="confirm" required class="w-full px-4 py-3 rounded bg-neutral-800 border border-neutral-700 focus:outline-none focus:border-slate-500">
+                    <div class="relative">
+                        <input id="register-confirm" type="password" name="confirm" required class="w-full px-4 py-3 pr-14 rounded bg-neutral-800 border border-neutral-700 focus:outline-none focus:border-slate-500">
+                        <button type="button" data-toggle-target="register-confirm" class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200 text-sm">Mostrar</button>
+                    </div>
                 </div>
 
                 <button class="w-full bg-slate-600 py-3 text-2xl rounded hover:bg-slate-700 transition tracking-widest">REGISTAR</button>
@@ -131,6 +168,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </div>
     </div>
 </div>
+
+<script>
+document.querySelectorAll('button[data-toggle-target]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        const input = document.getElementById(btn.getAttribute('data-toggle-target'));
+        if (!input) return;
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        btn.textContent = isPassword ? 'Ocultar' : 'Mostrar';
+    });
+});
+</script>
 
 </body>
 </html>

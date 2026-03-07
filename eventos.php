@@ -4,10 +4,38 @@ include "db.php";
 include "security.php";
 
 $today = date("Y-m-d");
-$stmt = $conn->prepare("SELECT * FROM events WHERE date > ? ORDER BY date ASC");
-$stmt->bind_param("s", $today);
+$activeView = $_GET['view'] ?? 'upcoming';
+if ($activeView !== 'past') {
+    $activeView = 'upcoming';
+}
+
+$stmt = $conn->prepare("SELECT * FROM events ORDER BY date ASC");
 $stmt->execute();
 $result = $stmt->get_result();
+
+$upcomingEvents = [];
+$pastEvents = [];
+if ($result) {
+    while ($row = $result->fetch_assoc()) {
+        if ($row['date'] >= $today) {
+            $upcomingEvents[] = $row;
+        } else {
+            $pastEvents[] = $row;
+        }
+    }
+}
+
+if (!empty($pastEvents)) {
+    usort($pastEvents, function ($a, $b) {
+        return strcmp($b['date'], $a['date']);
+    });
+}
+
+$activeEvents = $activeView === 'past' ? $pastEvents : $upcomingEvents;
+$activeTitle = $activeView === 'past' ? 'EVENTOS PASSADOS' : 'EVENTOS ATUAIS E FUTUROS';
+$activeSubtitle = $activeView === 'past'
+    ? 'Revive cards anteriores e resultados históricos'
+    : 'Próximas noites de combate e eventos em curso';
 ?>
 <!DOCTYPE html>
 <html lang="pt">
@@ -78,14 +106,25 @@ $result = $stmt->get_result();
 </nav>
 
 <section class="pt-32 pb-10 text-center">
-    <h1 class="text-6xl font-bold tracking-widest text-red-500">EVENTOS FUTUROS</h1>
-    <p class="text-neutral-400 text-lg mt-2">Próximas noites de combate</p>
+    <h1 class="text-6xl font-bold tracking-widest text-red-500"><?= e($activeTitle) ?></h1>
+    <p class="text-neutral-400 text-lg mt-2"><?= e($activeSubtitle) ?></p>
+
+    <div class="mt-6 inline-flex rounded-xl border border-neutral-700 bg-neutral-900/60 p-1">
+        <a href="eventos.php?view=upcoming"
+           class="px-5 py-2 rounded-lg text-sm uppercase tracking-wide transition <?= $activeView === 'upcoming' ? 'bg-red-600 text-white' : 'text-neutral-300 hover:bg-neutral-800' ?>">
+            Atuais e Futuros (<?= count($upcomingEvents) ?>)
+        </a>
+        <a href="eventos.php?view=past"
+           class="px-5 py-2 rounded-lg text-sm uppercase tracking-wide transition <?= $activeView === 'past' ? 'bg-red-600 text-white' : 'text-neutral-300 hover:bg-neutral-800' ?>">
+            Passados (<?= count($pastEvents) ?>)
+        </a>
+    </div>
 </section>
 
 <div class="max-w-6xl mx-auto px-6 pb-20 grid grid-cols-1 md:grid-cols-2 gap-10">
 
-<?php if ($result && $result->num_rows > 0): ?>
-    <?php while ($event = $result->fetch_assoc()): ?>
+<?php if (!empty($activeEvents)): ?>
+    <?php foreach ($activeEvents as $event): ?>
 
         <?php
         $event_id = (int) $event['id'];
@@ -108,10 +147,15 @@ $result = $stmt->get_result();
         $banner = !empty($event['banner']) ? $event['banner'] : 'uploads/default_banner.webp';
         $bannerBackdrop = 'assets/days-badge-bg.avif';
         $daysTo = (int) floor((strtotime($event['date']) - strtotime($today)) / 86400);
-        if ($daysTo < 0) {
-            $daysTo = 0;
+        if ($activeView === 'past') {
+            $ago = abs($daysTo);
+            $daysLabel = $ago === 0 ? 'Terminou hoje' : 'Terminou há ' . $ago . ' dias';
+        } else {
+            if ($daysTo < 0) {
+                $daysTo = 0;
+            }
+            $daysLabel = $daysTo === 0 ? 'Hoje' : 'Faltam ' . $daysTo . ' dias';
         }
-        $daysLabel = $daysTo === 0 ? 'Hoje' : 'Faltam ' . $daysTo . ' dias';
         ?>
 
         <a href="evento.php?id=<?= $event_id ?>" class="block group">
@@ -159,9 +203,13 @@ $result = $stmt->get_result();
             </div>
         </a>
 
-    <?php endwhile; ?>
+    <?php endforeach; ?>
 <?php else: ?>
-    <p class="text-center text-neutral-400 text-lg col-span-2">Ainda não há eventos futuros registados.</p>
+    <?php if ($activeView === 'past'): ?>
+        <p class="text-center text-neutral-400 text-lg col-span-2">Ainda não há eventos passados registados.</p>
+    <?php else: ?>
+        <p class="text-center text-neutral-400 text-lg col-span-2">Ainda não há eventos atuais/futuros registados.</p>
+    <?php endif; ?>
 <?php endif; ?>
 
 </div>

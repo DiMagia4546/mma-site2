@@ -2,8 +2,20 @@
 session_start();
 include "db.php";
 include "security.php";
+include "mailer.php";
+include "auth_verification.php";
 
 $error = "";
+
+ensure_auth_verification_schema($conn);
+
+function dev_show_code_on_email_fail(): bool
+{
+    if (defined('MMA_DEV_SHOW_CODE_ON_EMAIL_FAIL')) {
+        return trim((string) constant('MMA_DEV_SHOW_CODE_ON_EMAIL_FAIL')) === '1';
+    }
+    return false;
+}
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     verify_csrf_or_die();
@@ -20,14 +32,67 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $user = $res->fetch_assoc();
 
         if (password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = (int) $user['id'];
-            $_SESSION['role'] = $user['role'] ?? 'user';
-            $_SESSION['user_name'] = $user['name'] ?? '';
-            $_SESSION['user_email'] = $user['email'] ?? '';
-            $_SESSION['user_profile_pic'] = $user['profile_pic'] ?? '';
-            session_regenerate_id(true);
-            header("Location: index.php");
-            exit;
+            $userId = (int) $user['id'];
+            $role = $user['role'] ?? 'user';
+            $isEmailVerified = (int) ($user['email_verified'] ?? 0) === 1;
+
+            // Admin bypasses email code to avoid lockout when SMTP is unavailable.
+            if ($role === 'admin') {
+                $_SESSION['user_id'] = $userId;
+                $_SESSION['role'] = $role;
+                $_SESSION['user_name'] = $user['name'] ?? '';
+                $_SESSION['user_email'] = $user['email'] ?? '';
+                $_SESSION['user_profile_pic'] = $user['profile_pic'] ?? '';
+                session_regenerate_id(true);
+                header("Location: index.php");
+                exit;
+            }
+
+            if (!$isEmailVerified) {
+                $verifyCode = create_auth_code($conn, $userId, 'verify_email', 600);
+                if (!send_auth_code_email($user['name'] ?? '', $user['email'] ?? '', $verifyCode, 'register')) {
+                    $error = "Email ainda nao confirmado. Nao foi possivel reenviar o codigo agora. Confirma o SMTP e tenta novamente.";
+                } else {
+                    $_SESSION['pending_verify_user_id'] = $userId;
+                    $_SESSION['pending_verify_email'] = $user['email'] ?? '';
+                    $_SESSION['pending_verify_name'] = $user['name'] ?? '';
+                    header("Location: verify_code.php?flow=register");
+                    exit;
+                }
+            }
+
+            $code = create_auth_code($conn, $userId, 'login', 600);
+            if (!send_auth_code_email($user['name'] ?? '', $user['email'] ?? '', $code, 'login')) {
+                if (dev_show_code_on_email_fail()) {
+                    $_SESSION['pending_login_user'] = [
+                        'id' => $userId,
+                        'role' => $user['role'] ?? 'user',
+                        'name' => $user['name'] ?? '',
+                        'email' => $user['email'] ?? '',
+                        'profile_pic' => $user['profile_pic'] ?? '',
+                    ];
+                    $_SESSION['dev_auth_code_login'] = $code;
+                    header("Location: verify_code.php?flow=login");
+                    exit;
+                } else {
+                    $error = "Nao foi possivel enviar o codigo de seguranca para o teu email. Tenta novamente em instantes.";
+                    $clearCodes = $conn->prepare("DELETE FROM auth_codes WHERE user_id = ? AND purpose = 'login' AND used_at IS NULL");
+                    $clearCodes->bind_param("i", $userId);
+                    $clearCodes->execute();
+                    $clearCodes->close();
+                }
+            } else {
+                $_SESSION['pending_login_user'] = [
+                    'id' => $userId,
+                    'role' => $user['role'] ?? 'user',
+                    'name' => $user['name'] ?? '',
+                    'email' => $user['email'] ?? '',
+                    'profile_pic' => $user['profile_pic'] ?? '',
+                ];
+
+                header("Location: verify_code.php?flow=login");
+                exit;
+            }
         }
 
         $error = "Password incorreta.";
@@ -99,8 +164,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 <div>
                     <label class="block text-lg mb-1 text-neutral-300">Password</label>
-                    <input type="password" name="password" required
-                           class="w-full px-4 py-3 rounded bg-neutral-800 border border-neutral-700 focus:outline-none focus:border-slate-500">
+                    <div class="relative">
+                        <input id="login-password" type="password" name="password" required
+                               class="w-full px-4 py-3 pr-14 rounded bg-neutral-800 border border-neutral-700 focus:outline-none focus:border-slate-500">
+                        <button type="button" data-toggle-target="login-password" class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200 text-sm">Mostrar</button>
+                    </div>
                 </div>
 
                 <button class="w-full bg-slate-600 py-3 text-2xl rounded hover:bg-slate-700 transition tracking-widest">
@@ -118,6 +186,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </div>
     </div>
 </div>
+
+<script>
+document.querySelectorAll('button[data-toggle-target]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        const input = document.getElementById(btn.getAttribute('data-toggle-target'));
+        if (!input) return;
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        btn.textContent = isPassword ? 'Ocultar' : 'Mostrar';
+    });
+});
+</script>
 
 </body>
 </html>

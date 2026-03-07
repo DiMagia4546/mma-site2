@@ -3,7 +3,16 @@ session_start();
 include "db.php";
 include "security.php";
 
-$stmt = $conn->prepare("SELECT * FROM fighters ORDER BY id DESC");
+$stmt = $conn->prepare(
+    "SELECT f.*
+     FROM fighters f
+     INNER JOIN (
+         SELECT TRIM(fighter1_name) AS fighter_name FROM event_fights
+         UNION
+         SELECT TRIM(fighter2_name) AS fighter_name FROM event_fights
+     ) ef ON TRIM(f.name) = ef.fighter_name
+     ORDER BY f.id DESC"
+);
 $stmt->execute();
 $result = $stmt->get_result();
 ?>
@@ -87,10 +96,10 @@ $result = $stmt->get_result();
 
 <?php while ($row = $result->fetch_assoc()): ?>
 
-    <div class="bg-neutral-800 rounded-xl overflow-hidden shadow-lg hover:scale-105 transition cursor-pointer">
+    <div class="bg-neutral-800 rounded-xl overflow-hidden shadow-lg hover:scale-105 transition cursor-pointer h-full flex flex-col">
         <img src="<?= e($row['image']) ?>" class="w-full h-80 object-cover" alt="<?= e($row['name']) ?>">
 
-        <div class="p-5">
+        <div class="p-5 flex flex-col flex-1">
             <h3 class="text-3xl font-bold tracking-wide text-white"><?= e($row['name']) ?></h3>
             <p class="text-red-500 text-lg -mt-1"><?= e($row['weight_class']) ?></p>
             <p class="text-neutral-300 mt-2"><?= e($row['nationality']) ?></p>
@@ -103,7 +112,7 @@ $result = $stmt->get_result();
                 KO: <?= (int) $row['kos'] ?> | Sub: <?= (int) $row['submissions'] ?>
             </p>
 
-            <a href="fighter.php?id=<?= (int) $row['id'] ?>" class="block mt-4 text-center bg-red-600 py-2 rounded hover:bg-red-700 transition">Ver Perfil</a>
+            <a href="fighter.php?id=<?= (int) $row['id'] ?>" class="block mt-auto pt-4 text-center bg-red-600 py-2 rounded hover:bg-red-700 transition">Ver Perfil</a>
         </div>
     </div>
 

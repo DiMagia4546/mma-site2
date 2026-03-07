@@ -3,6 +3,7 @@ session_start();
 include "db.php";
 include "security.php";
 include "favorites_helper.php";
+include "odds_helper.php";
 
 if (!isset($_GET["id"])) {
     die("Evento nao encontrado.");
@@ -179,6 +180,19 @@ function formatAmericanOdds(int $odds): string
     return $odds > 0 ? '+' . $odds : (string) $odds;
 }
 
+function impliedProbabilityFromAmerican(int $odds): float
+{
+    if ($odds < 0) {
+        return abs($odds) / (abs($odds) + 100);
+    }
+
+    if ($odds > 0) {
+        return 100 / ($odds + 100);
+    }
+
+    return 0.5;
+}
+
 function calculateFightOdds(?array $f1Meta, ?array $f2Meta, string $fighter1, string $fighter2): array
 {
     $s1 = fighterStrength($f1Meta, $fighter1);
@@ -212,6 +226,8 @@ $stmtFights->bind_param("i", $event_id);
 $stmtFights->execute();
 $fights = $stmtFights->get_result();
 $stmtFights->close();
+
+$officialOddsMap = build_official_odds_map();
 ?>
 <!DOCTYPE html>
 <html lang="pt">
@@ -352,7 +368,23 @@ $heroBackground = $heroArtExists
                 <?php
                 $f1Meta = $fightersMap[normalizeFighterKey($fight["fighter1_name"])] ?? null;
                 $f2Meta = $fightersMap[normalizeFighterKey($fight["fighter2_name"])] ?? null;
-                $odds = calculateFightOdds($f1Meta, $f2Meta, $fight["fighter1_name"], $fight["fighter2_name"]);
+                $officialOdds = official_odds_for_fight($officialOddsMap, $fight["fighter1_name"], $fight["fighter2_name"]);
+                if ($officialOdds) {
+                    $odds = [
+                        'odds1' => (int) $officialOdds['odds1'],
+                        'odds2' => (int) $officialOdds['odds2'],
+                        'p1' => impliedProbabilityFromAmerican((int) $officialOdds['odds1']),
+                        'p2' => impliedProbabilityFromAmerican((int) $officialOdds['odds2']),
+                        'source' => 'official',
+                        'bookmaker' => $officialOdds['bookmaker'] ?? 'Sportsbook',
+                        'last_update' => $officialOdds['last_update'] ?? '',
+                    ];
+                } else {
+                    $odds = calculateFightOdds($f1Meta, $f2Meta, $fight["fighter1_name"], $fight["fighter2_name"]);
+                    $odds['source'] = 'simulated';
+                    $odds['bookmaker'] = '';
+                    $odds['last_update'] = '';
+                }
                 ?>
                 <div class="bg-neutral-800 border border-neutral-700 rounded-xl p-8 shadow-lg">
                     <div class="flex flex-col md:flex-row items-center justify-between gap-10">
@@ -389,7 +421,14 @@ $heroBackground = $heroArtExists
                         </div>
 
                         <div class="rounded-lg border border-neutral-700 bg-neutral-900/40 px-4 py-3 text-center flex items-center justify-center">
-                            <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">Odds estimadas (simulacao)</p>
+                            <?php if (($odds['source'] ?? '') === 'official'): ?>
+                                <div>
+                                    <p class="text-xs uppercase tracking-[0.2em] text-emerald-300">Odds oficiais</p>
+                                    <p class="text-[11px] text-neutral-400 mt-1"><?= e($odds['bookmaker']) ?></p>
+                                </div>
+                            <?php else: ?>
+                                <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">Odds estimadas (simulacao)</p>
+                            <?php endif; ?>
                         </div>
 
                         <div class="rounded-lg border border-neutral-700 bg-neutral-900/60 px-4 py-3 text-center">

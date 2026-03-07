@@ -206,3 +206,41 @@ function send_welcome_email(string $name, string $email): bool
 
     return @mail($email, $subject, $message, implode("\r\n", $headers));
 }
+
+function send_auth_code_email(string $name, string $email, string $code, string $context = 'login'): bool
+{
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+
+    $siteName = mailer_config('MMA_SITE_NAME', 'MMA 360');
+    $safeName = trim($name) !== '' ? trim($name) : 'utilizador';
+    $isRegister = $context === 'register';
+    $subject = $isRegister
+        ? $siteName . ' - Confirmacao de email'
+        : $siteName . ' - Codigo de seguranca de login';
+
+    $message = "Ola {$safeName},\r\n\r\n";
+    if ($isRegister) {
+        $message .= "Usa este codigo para confirmar o teu email:\r\n";
+    } else {
+        $message .= "Usa este codigo para confirmar o teu login:\r\n";
+    }
+    $message .= "Codigo: {$code}\r\n";
+    $message .= "Validade: 10 minutos.\r\n\r\n";
+    $message .= "Se nao foste tu, ignora este email.\r\n\r\n";
+    $message .= "Equipa {$siteName}";
+
+    $from = mailer_from_address();
+    if (smtp_send_gmail($email, $subject, $message, $from, $siteName)) {
+        return true;
+    }
+
+    $headers = [];
+    $headers[] = 'MIME-Version: 1.0';
+    $headers[] = 'Content-Type: text/plain; charset=UTF-8';
+    $headers[] = 'From: ' . $siteName . ' <' . $from . '>';
+    $headers[] = 'Reply-To: ' . $from;
+
+    return @mail($email, $subject, $message, implode("\r\n", $headers));
+}
