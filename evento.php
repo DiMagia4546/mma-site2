@@ -1,9 +1,11 @@
-<?php
+﻿<?php
 session_start();
 include "db.php";
 include "security.php";
+include "navbar.php";
 include "favorites_helper.php";
 include "odds_helper.php";
+require_login();
 
 if (!isset($_GET["id"])) {
     die("Evento nao encontrado.");
@@ -20,6 +22,15 @@ function firstExistingAsset(array $relativePaths): string
     }
 
     return "";
+}
+
+function eventBannerPath(?string $banner): string
+{
+    $candidate = trim((string) $banner);
+    if ($candidate !== '' && is_file(__DIR__ . '/' . $candidate)) {
+        return $candidate;
+    }
+    return 'uploads/default_banner.webp';
 }
 
 $stmtEvent = $conn->prepare("SELECT * FROM events WHERE id = ? LIMIT 1");
@@ -86,7 +97,7 @@ function flagCodesByNationality(string $nationality): array
         'dutch' => 'NL',
         'netherlands' => 'NL',
         'holandes' => 'NL',
-        'holandês' => 'NL',
+        'holandÃªs' => 'NL',
         'mexican' => 'MX',
         'mexicano' => 'MX',
         'puerto rican' => 'PR',
@@ -109,7 +120,7 @@ function flagCodesByNationality(string $nationality): array
 function emojiByCountryCode(string $country): string
 {
     if ($country === 'ZZ') {
-        return '🏳️';
+        return 'ðŸ³ï¸';
     }
 
     $first = ord($country[0]) - 65 + 127462;
@@ -214,7 +225,7 @@ function calculateFightOdds(?array $f1Meta, ?array $f2Meta, string $fighter1, st
 }
 
 $fightersMap = [];
-$fightersMetaRes = $conn->query("SELECT name, nationality, wins, losses FROM fighters");
+$fightersMetaRes = $conn->query("SELECT id, name, nationality, wins, losses FROM fighters");
 if ($fightersMetaRes) {
     while ($meta = $fightersMetaRes->fetch_assoc()) {
         $fightersMap[normalizeFighterKey($meta['name'])] = $meta;
@@ -244,15 +255,41 @@ $officialOddsMap = build_official_odds_map();
         h1, h2, h3 { font-family: 'Teko', sans-serif; }
         .event-hero-wrap {
             background-color: #04070d;
-            background-repeat: no-repeat, no-repeat, no-repeat;
-            background-size: cover, 32% auto, 32% auto;
-            background-position: center, left top, right top;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
         }
 
         .event-hero-card {
             border: 1px solid rgba(255, 255, 255, 0.12);
             backdrop-filter: blur(2px);
             box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+            position: relative;
+            min-height: 280px;
+            background: rgba(5, 8, 14, 0.72);
+        }
+
+        .event-hero-art {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+            filter: saturate(1.08) contrast(1.04);
+        }
+
+        .event-hero-overlay {
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(90deg, rgba(3, 6, 12, 0.88) 0%, rgba(3, 6, 12, 0.52) 38%, rgba(3, 6, 12, 0.74) 100%),
+                linear-gradient(180deg, rgba(3, 6, 12, 0.16), rgba(3, 6, 12, 0.78));
+        }
+
+        .event-hero-content {
+            position: relative;
+            z-index: 1;
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -262,78 +299,24 @@ $officialOddsMap = build_official_odds_map();
 
 <body class="bg-neutral-900 text-neutral-100">
 
-<nav class="fixed top-0 w-full z-40 bg-neutral-900/70 backdrop-blur border-b border-neutral-700">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        <?php
-        $navLogo = firstExistingAsset([
-            "assets/logo-mma360.png",
-            "assets/logo-mma360.png.png",
-            "assets/logo-mma360.webp",
-            "assets/logo-mma360.jpg",
-            "assets/logo-mma360.jpeg",
-            "pf-removebg-preview.png",
-        ]);
-        ?>
-        <a href="index.php" class="flex items-center gap-3">
-            <img src="<?= e($navLogo !== "" ? $navLogo : "assets/logo-mma360.png.png") ?>" class="h-12 md:h-14" alt="Logo">
-            <span class="text-xl font-semibold tracking-widest text-red-500">MMA 360</span>
-        </a>
-
-        <ul class="hidden md:flex gap-8 text-sm uppercase tracking-wide">
-            <li><a href="index.php" class="hover:text-red-500 transition">Inicio</a></li>
-            <li><a href="noticias.php" class="hover:text-red-500 transition">Noticias</a></li>
-            <li><a href="about.php" class="hover:text-red-500 transition">Quem Somos</a></li>
-            <li><a href="fighters.php" class="hover:text-red-500 transition">Lutadores</a></li>
-            <li><a href="eventos.php" class="text-red-500">Eventos</a></li>
-            <li><a href="contacto.php" class="hover:text-red-500 transition">Contacto</a></li>
-            <?php if (isset($_SESSION['user_id'])): ?>
-                <?php
-                $displayName = $_SESSION['user_name'] ?? 'Conta';
-                $displayEmail = $_SESSION['user_email'] ?? '';
-                $displayPic = $_SESSION['user_profile_pic'] ?? '';
-                $initial = strtoupper(substr(trim($displayName) ?: 'U', 0, 1));
-                ?>
-                <li class="relative account-menu">
-                    <button type="button" class="account-menu-toggle flex items-center gap-2 text-neutral-100 hover:text-red-500 transition">
-                        <?php if (!empty($displayPic)): ?>
-                            <img src="<?= e($displayPic) ?>" class="w-9 h-9 rounded-full object-cover border border-red-500" alt="Perfil">
-                        <?php else: ?>
-                            <span class="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center text-sm font-bold"><?= e($initial) ?></span>
-                        <?php endif; ?>
-                        <span class="hidden lg:block normal-case text-sm"><?= e($displayName) ?></span>
-                    </button>
-
-                    <div class="account-menu-panel hidden absolute right-0 top-12 w-72 bg-neutral-900/95 border border-neutral-700 rounded-xl shadow-2xl overflow-hidden normal-case">
-                        <div class="px-4 py-3 border-b border-neutral-700">
-                            <p class="text-sm font-semibold text-white"><?= e($displayName) ?></p>
-                            <p class="text-xs text-neutral-400"><?= e($displayEmail) ?></p>
-                        </div>
-                        <a href="dashboard.php" class="block px-4 py-3 text-sm hover:bg-neutral-800">Dashboard</a>
-                        <a href="logout.php" class="block px-4 py-3 text-sm text-red-500 hover:bg-neutral-800">Terminar Sessão</a>
-                    </div>
-                </li>
-            <?php else: ?>
-                <li><a href="login.php" class="hover:text-red-500 transition">Login</a></li>
-            <?php endif; ?>
-        </ul>
-    </div>
-</nav>
+<?php render_main_nav('eventos'); ?>
 
 <div class="pt-24"></div>
 
 <?php
-$banner = !empty($event["banner"]) ? $event["banner"] : "uploads/default_banner.webp";
-$heroArt = "assets/eventos/ufc-326-hero.avif";
-$heroCornerAsset = $heroArt;
-$heroArtExists = is_file(__DIR__ . "/" . $heroArt);
-$heroBackground = $heroArtExists
-    ? "background-image: linear-gradient(180deg, rgba(3,6,12,0.94), rgba(3,6,12,0.68)), url('{$heroCornerAsset}'), url('{$heroCornerAsset}');"
-    : "background-image: linear-gradient(180deg, rgba(3,6,12,0.94), rgba(3,6,12,0.68));";
+$banner = eventBannerPath($event["banner"] ?? '');
+$heroBackground = "background-image:
+    radial-gradient(circle at 12% 20%, rgba(255, 43, 86, 0.14), transparent 38%),
+    radial-gradient(circle at 88% 18%, rgba(255, 43, 86, 0.12), transparent 36%),
+    linear-gradient(180deg, rgba(3,6,12,0.90), rgba(3,6,12,0.74)),
+    url('{$banner}');";
 ?>
 <div class="event-hero-wrap w-full border-b border-neutral-700" style="<?= e($heroBackground) ?>">
     <div class="max-w-5xl mx-auto px-6 py-8 md:py-10">
-        <div class="event-hero-card rounded-2xl overflow-hidden bg-cover bg-center p-6 md:p-8"
-             style="background-image: linear-gradient(to top, rgba(0,0,0,0.80), rgba(0,0,0,0.40)), url('<?= e($banner) ?>');">
+        <div class="event-hero-card rounded-2xl overflow-hidden p-6 md:p-8">
+            <img src="<?= e($banner) ?>" class="event-hero-art" alt="<?= e($event["name"]) ?>">
+            <div class="event-hero-overlay"></div>
+            <div class="event-hero-content">
             <h1 class="text-6xl font-bold text-white tracking-wide"><?= e($event["name"]) ?></h1>
             <p class="text-neutral-300 text-lg mt-2">
                 <?= e(date("d/m/Y", strtotime($event["date"]))) ?>  -  <?= e($event["location"]) ?>
@@ -350,6 +333,7 @@ $heroBackground = $heroArtExists
                 <?php endif; ?>
             </form>
             <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>
@@ -387,9 +371,19 @@ $heroBackground = $heroArtExists
                 }
                 ?>
                 <div class="bg-neutral-800 border border-neutral-700 rounded-xl p-8 shadow-lg">
+                    <?php
+                    $fighter1Id = (int) ($f1Meta['id'] ?? 0);
+                    $fighter2Id = (int) ($f2Meta['id'] ?? 0);
+                    ?>
                     <div class="flex flex-col md:flex-row items-center justify-between gap-10">
                         <div class="flex flex-col items-center">
-                            <img src="<?= e($fight["fighter1_image"]) ?>" class="w-40 h-40 object-cover rounded-full border-2 border-red-600" alt="<?= e($fight["fighter1_name"]) ?>">
+                            <?php if ($fighter1Id > 0): ?>
+                                <a href="fighter.php?id=<?= $fighter1Id ?>" class="block">
+                                    <img src="<?= e($fight["fighter1_image"]) ?>" class="w-40 h-40 object-cover rounded-full border-2 border-red-600 hover:scale-105 transition" alt="<?= e($fight["fighter1_name"]) ?>">
+                                </a>
+                            <?php else: ?>
+                                <img src="<?= e($fight["fighter1_image"]) ?>" class="w-40 h-40 object-cover rounded-full border-2 border-red-600" alt="<?= e($fight["fighter1_name"]) ?>">
+                            <?php endif; ?>
                             <p class="text-3xl font-bold mt-4 text-white"><?= e($fight["fighter1_name"]) ?></p>
                             <?php if ($f1Meta): ?>
                                 <p class="text-sm text-neutral-300 mt-1"><?= renderFlagHtml($f1Meta["nationality"]) ?><span><?= e($f1Meta["nationality"]) ?></span></p>
@@ -402,7 +396,13 @@ $heroBackground = $heroArtExists
                         <span class="text-5xl font-bold text-white">VS</span>
 
                         <div class="flex flex-col items-center">
-                            <img src="<?= e($fight["fighter2_image"]) ?>" class="w-40 h-40 object-cover rounded-full border-2 border-red-600" alt="<?= e($fight["fighter2_name"]) ?>">
+                            <?php if ($fighter2Id > 0): ?>
+                                <a href="fighter.php?id=<?= $fighter2Id ?>" class="block">
+                                    <img src="<?= e($fight["fighter2_image"]) ?>" class="w-40 h-40 object-cover rounded-full border-2 border-red-600 hover:scale-105 transition" alt="<?= e($fight["fighter2_name"]) ?>">
+                                </a>
+                            <?php else: ?>
+                                <img src="<?= e($fight["fighter2_image"]) ?>" class="w-40 h-40 object-cover rounded-full border-2 border-red-600" alt="<?= e($fight["fighter2_name"]) ?>">
+                            <?php endif; ?>
                             <p class="text-3xl font-bold mt-4 text-white"><?= e($fight["fighter2_name"]) ?></p>
                             <?php if ($f2Meta): ?>
                                 <p class="text-sm text-neutral-300 mt-1"><?= renderFlagHtml($f2Meta["nationality"]) ?><span><?= e($f2Meta["nationality"]) ?></span></p>
@@ -451,3 +451,6 @@ $heroBackground = $heroArtExists
 
 </body>
 </html>
+
+
+

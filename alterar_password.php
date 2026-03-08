@@ -2,6 +2,7 @@
 session_start();
 include "db.php";
 include "security.php";
+include "navbar.php";
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -61,21 +62,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <link rel="stylesheet" href="assets/site.css"></head>
 
 <body class="bg-neutral-900 text-neutral-100">
-<nav class="fixed top-0 w-full z-40 bg-neutral-900/70 backdrop-blur border-b border-neutral-700">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        <a href="index.php" class="flex items-center gap-3">
-            <img src="assets/logo-mma360.png.png" class="h-12 md:h-14" alt="Logo">
-            <span class="text-xl font-semibold tracking-widest text-red-500">MMA 360</span>
-        </a>
-
-        <ul class="hidden md:flex gap-8 text-sm uppercase tracking-wide">
-            <li><a href="dashboard.php" class="hover:text-red-500 transition">Painel</a></li>
-            <li><a href="fighters.php" class="hover:text-red-500 transition">Lutadores</a></li>
-            <li><a href="eventos.php" class="hover:text-red-500 transition">Eventos</a></li>
-            <li><a href="logout.php" class="text-red-500">Logout</a></li>
-        </ul>
-    </div>
-</nav>
+<?php render_main_nav(); ?>
 
 <div class="pt-28"></div>
 
@@ -107,5 +94,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </body>
 </html>
+
+
+
 
 

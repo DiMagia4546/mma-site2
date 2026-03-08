@@ -3,6 +3,7 @@ session_start();
 include "db.php";
 include "activity.php";
 include "security.php";
+include "navbar.php";
 include "favorites_helper.php";
 
 if (!isset($_SESSION['user_id'])) {
@@ -64,48 +65,7 @@ $activity = $stmtActivity->get_result();
 
 <body class="bg-neutral-900 text-neutral-100">
 
-<nav class="fixed top-0 w-full z-40 bg-neutral-900/70 backdrop-blur border-b border-neutral-700">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        <a href="index.php" class="flex items-center gap-3">
-            <img src="assets/logo-mma360.png.png" class="h-12 md:h-14" alt="Logo">
-            <span class="text-xl font-semibold tracking-widest text-red-500">MMA 360</span>
-        </a>
-
-        <ul class="hidden md:flex gap-8 text-sm uppercase tracking-wide">
-            <li><a href="index.php" class="hover:text-red-500 transition">Início</a></li>
-            <li><a href="noticias.php" class="hover:text-red-500 transition">Notícias</a></li>
-            <li><a href="about.php" class="hover:text-red-500 transition">Quem Somos</a></li>
-            <li><a href="fighters.php" class="hover:text-red-500 transition">Lutadores</a></li>
-            <li><a href="eventos.php" class="hover:text-red-500 transition">Eventos</a></li>
-            <li><a href="contacto.php" class="hover:text-red-500 transition">Contacto</a></li>
-            <?php
-            $displayName = $_SESSION['user_name'] ?? ($user['name'] ?? 'Conta');
-            $displayEmail = $_SESSION['user_email'] ?? ($user['email'] ?? '');
-            $displayPic = $_SESSION['user_profile_pic'] ?? ($user['profile_pic'] ?? '');
-            $initial = strtoupper(substr(trim($displayName) ?: 'U', 0, 1));
-            ?>
-            <li class="relative account-menu">
-                <button type="button" class="account-menu-toggle flex items-center gap-2 text-neutral-100 hover:text-red-500 transition normal-case">
-                    <?php if (!empty($displayPic)): ?>
-                        <img src="<?= e($displayPic) ?>" class="w-9 h-9 rounded-full object-cover border border-red-500" alt="Perfil">
-                    <?php else: ?>
-                        <span class="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center text-sm font-bold"><?= e($initial) ?></span>
-                    <?php endif; ?>
-                    <span class="hidden lg:block text-sm"><?= e($displayName) ?></span>
-                </button>
-
-                <div class="account-menu-panel hidden absolute right-0 top-12 w-72 bg-neutral-900/95 border border-neutral-700 rounded-xl shadow-2xl overflow-hidden normal-case">
-                    <div class="px-4 py-3 border-b border-neutral-700">
-                        <p class="text-sm font-semibold text-white"><?= e($displayName) ?></p>
-                        <p class="text-xs text-neutral-400"><?= e($displayEmail) ?></p>
-                    </div>
-                    <a href="dashboard.php" class="block px-4 py-3 text-sm hover:bg-neutral-800">Dashboard</a>
-                    <a href="logout.php" class="block px-4 py-3 text-sm text-red-500 hover:bg-neutral-800">Terminar Sessão</a>
-                </div>
-            </li>
-        </ul>
-    </div>
-</nav>
+<?php render_main_nav(); ?>
 
 <div class="pt-28"></div>
 
@@ -211,5 +171,8 @@ $activity = $stmtActivity->get_result();
 
 </body>
 </html>
+
+
+
 
 

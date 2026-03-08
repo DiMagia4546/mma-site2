@@ -36,3 +36,16 @@ function verify_csrf_or_die(): void
         exit('Pedido inválido (CSRF).');
     }
 }
+
+function is_logged_in(): bool
+{
+    return !empty($_SESSION['user_id']);
+}
+
+function require_login(string $redirect = 'login.php'): void
+{
+    if (!is_logged_in()) {
+        header('Location: ' . $redirect);
+        exit;
+    }
+}

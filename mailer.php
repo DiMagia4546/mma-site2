@@ -1,7 +1,4 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 
 if (file_exists(__DIR__ . '/mail_config.php')) {
     require_once __DIR__ . '/mail_config.php';
@@ -243,4 +240,36 @@ function send_auth_code_email(string $name, string $email, string $code, string 
     $headers[] = 'Reply-To: ' . $from;
 
     return @mail($email, $subject, $message, implode("\r\n", $headers));
+}
+
+function send_contact_email_to_team(string $fromName, string $fromEmail, string $content): bool
+{
+    if (!filter_var($fromEmail, FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+
+    $siteName = mailer_config('MMA_SITE_NAME', 'MMA 360');
+    $teamEmail = mailer_config('MMA_CONTACT_TEAM_EMAIL', 'mma360.project@gmail.com');
+    if (!filter_var($teamEmail, FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+
+    $subject = $siteName . ' - Nova mensagem de contacto';
+    $message = "Nova mensagem recebida pelo formulario de contacto.\r\n\r\n";
+    $message .= "Nome: {$fromName}\r\n";
+    $message .= "Email: {$fromEmail}\r\n\r\n";
+    $message .= "Mensagem:\r\n{$content}\r\n";
+
+    $from = mailer_from_address();
+    if (smtp_send_gmail($teamEmail, $subject, $message, $from, $siteName)) {
+        return true;
+    }
+
+    $headers = [];
+    $headers[] = 'MIME-Version: 1.0';
+    $headers[] = 'Content-Type: text/plain; charset=UTF-8';
+    $headers[] = 'From: ' . $siteName . ' <' . $from . '>';
+    $headers[] = 'Reply-To: ' . $fromEmail;
+
+    return @mail($teamEmail, $subject, $message, implode("\r\n", $headers));
 }
