@@ -273,3 +273,58 @@ function send_contact_email_to_team(string $fromName, string $fromEmail, string 
 
     return @mail($teamEmail, $subject, $message, implode("\r\n", $headers));
 }
+
+function send_plain_email(string $email, string $subject, string $message, ?string $replyTo = null): bool
+{
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+
+    $siteName = mailer_config('MMA_SITE_NAME', 'MMA 360');
+    $from = mailer_from_address();
+    if (smtp_send_gmail($email, $subject, $message, $from, $siteName)) {
+        return true;
+    }
+
+    $headers = [];
+    $headers[] = 'MIME-Version: 1.0';
+    $headers[] = 'Content-Type: text/plain; charset=UTF-8';
+    $headers[] = 'From: ' . $siteName . ' <' . $from . '>';
+    $headers[] = 'Reply-To: ' . ($replyTo && filter_var($replyTo, FILTER_VALIDATE_EMAIL) ? $replyTo : $from);
+
+    return @mail($email, $subject, $message, implode("\r\n", $headers));
+}
+
+function send_broadcast_email_to_registered_users(mysqli $conn, string $subject, string $bodyTemplate): array
+{
+    $sent = 0;
+    $failed = 0;
+    $total = 0;
+
+    $res = $conn->query("SELECT name, email FROM users WHERE email_verified = 1");
+    if (!$res) {
+        return ['total' => 0, 'sent' => 0, 'failed' => 0];
+    }
+
+    while ($row = $res->fetch_assoc()) {
+        $email = trim((string) ($row['email'] ?? ''));
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            continue;
+        }
+
+        $total++;
+        $name = trim((string) ($row['name'] ?? 'utilizador'));
+        if ($name === '') {
+            $name = 'utilizador';
+        }
+
+        $body = str_replace('{{name}}', $name, $bodyTemplate);
+        if (send_plain_email($email, $subject, $body)) {
+            $sent++;
+        } else {
+            $failed++;
+        }
+    }
+
+    return ['total' => $total, 'sent' => $sent, 'failed' => $failed];
+}

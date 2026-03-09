@@ -3,6 +3,7 @@ session_start();
 include "db.php";
 include "security.php";
 include "upload_helper.php";
+include "mailer.php";
 
 if (!isset($_SESSION['user_id'])) { header("Location: login.php"); exit; }
 
@@ -35,8 +36,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $stmt = $conn->prepare("INSERT INTO events (name, date, location, main_event, banner) VALUES (?, ?, ?, ?, ?)");
         $stmt->bind_param("sssss", $name, $date, $location, $main_event, $banner);
 
-        if ($stmt->execute()) $success = "Evento criado com sucesso!";
-        else $error = "Erro ao criar evento.";
+        if ($stmt->execute()) {
+            $subject = "Novo evento anunciado: {$name}";
+            $message = "Ola {{name}},\r\n\r\n";
+            $message .= "Foi anunciado um novo evento no MMA 360.\r\n";
+            $message .= "Evento: {$name}\r\n";
+            $message .= "Data: {$date}\r\n";
+            $message .= "Local: {$location}\r\n";
+            $message .= "Main Event: {$main_event}\r\n\r\n";
+            $message .= "Entra no site para ver o card completo.\r\n\r\n";
+            $message .= "Equipa MMA 360";
+
+            $notify = send_broadcast_email_to_registered_users($conn, $subject, $message);
+            $success = "Evento criado com sucesso! Emails enviados: {$notify['sent']}/{$notify['total']}.";
+            if ((int) $notify['failed'] > 0) {
+                $success .= " Falhas: {$notify['failed']}.";
+            }
+        } else {
+            $error = "Erro ao criar evento.";
+        }
     } else {
         $error = implode(' ', $errors);
     }

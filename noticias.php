@@ -50,7 +50,7 @@ $others = array_slice($newsItems, 1);
 
 <main class="max-w-7xl mx-auto px-6 py-12">
     <?php if ($featured): ?>
-        <article class="bg-neutral-800 border border-neutral-700 rounded-2xl p-6 md:p-8 mb-10">
+        <a href="noticia.php?id=<?= (int) $featured['id'] ?>" class="bg-neutral-800 border border-neutral-700 rounded-2xl p-6 md:p-8 mb-10 block hover:border-red-500/50 transition">
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
                 <div class="lg:col-span-3">
                     <div class="flex flex-wrap items-center gap-3 text-xs mb-4">
@@ -63,7 +63,7 @@ $others = array_slice($newsItems, 1);
                         </span>
                     </div>
                     <h2 class="text-4xl md:text-5xl text-white mb-5"><?= e($featured["title"]) ?></h2>
-                    <p class="text-neutral-300 text-lg leading-relaxed"><?= nl2br(e($featured["content"])) ?></p>
+                    <p class="text-neutral-300 text-lg leading-relaxed"><?= e(mb_strimwidth($featured["content"], 0, 380, "...")) ?></p>
                 </div>
 
                 <div class="lg:col-span-2 rounded-xl overflow-hidden border border-neutral-700 min-h-[220px]">
@@ -76,13 +76,13 @@ $others = array_slice($newsItems, 1);
                     <?php endif; ?>
                 </div>
             </div>
-        </article>
+        </a>
     <?php endif; ?>
 
     <?php if (!empty($others)): ?>
         <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <?php foreach ($others as $news): ?>
-                <article class="bg-neutral-800 border border-neutral-700 rounded-2xl p-6">
+                <a href="noticia.php?id=<?= (int) $news['id'] ?>" class="bg-neutral-800 border border-neutral-700 rounded-2xl p-6 block hover:border-red-500/50 transition">
                     <div class="rounded-lg overflow-hidden border border-neutral-700 mb-4">
                         <?php if (!empty($news["image_path"])): ?>
                             <img src="<?= e($news["image_path"]) ?>" class="w-full h-44 object-cover" alt="<?= e($news["title"]) ?>">
@@ -96,7 +96,7 @@ $others = array_slice($newsItems, 1);
                     </div>
                     <h3 class="text-3xl text-white mb-3"><?= e($news["title"]) ?></h3>
                     <p class="text-neutral-300 leading-relaxed"><?= e(mb_strimwidth($news["content"], 0, 260, "...")) ?></p>
-                </article>
+                </a>
             <?php endforeach; ?>
         </section>
     <?php elseif (!$featured): ?>
@@ -108,12 +108,13 @@ $others = array_slice($newsItems, 1);
 </main>
 
 <footer class="border-t border-neutral-700 py-10 text-center">
-    <p class="text-neutral-300 text-lg">mma360@gmail.com</p>
+    <p class="text-neutral-300 text-lg">mma360.project@gmail.com</p>
     <p class="mt-4 text-neutral-500 text-sm">© 2026 MMA 360 - Todos os direitos reservados</p>
 </footer>
 
 </body>
 </html>
+
 
 
 

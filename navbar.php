@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 if (!function_exists('render_main_nav')) {
     function render_main_nav(string $active = ''): void
@@ -56,4 +56,5 @@ if (!function_exists('render_main_nav')) {
         <?php
     }
 }
+
 

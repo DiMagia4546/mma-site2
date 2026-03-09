@@ -23,6 +23,7 @@ if (!$res || $res->num_rows === 0) {
 }
 
 $f = $res->fetch_assoc();
+$profileHeroImage = !empty($f['profile_image']) ? $f['profile_image'] : ($f['image'] ?? 'uploads/default_fighter.webp');
 
 $stmtHistory = $conn->prepare("SELECT * FROM fighter_history WHERE fighter_id = ? ORDER BY fight_date DESC");
 $stmtHistory->bind_param("i", $fighter_id);
@@ -30,7 +31,7 @@ $stmtHistory->execute();
 $history = $stmtHistory->get_result();
 $stmtHistory->close();
 
-$isChampion = ((int) $f["wins"] > 20 && ((int) $f["wins"] - (int) $f["losses"]) > 10);
+$isChampion = (int) ($f["is_champion"] ?? 0) === 1;
 $isFavorite = false;
 if (isset($_SESSION["user_id"])) {
     $favTable = favoritesTable($conn);
@@ -70,10 +71,12 @@ if (isset($_SESSION["user_id"])) {
 <div class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
 
     <div class="relative">
-        <img src="<?= e($f["image"]) ?>" class="w-full h-[450px] object-cover rounded-xl grayscale" alt="<?= e($f["name"]) ?>">
+        <div class="w-full h-[450px] bg-neutral-800 rounded-xl overflow-hidden border border-neutral-700 flex items-center justify-center">
+            <img src="<?= e($profileHeroImage) ?>" class="w-full h-full object-contain object-center" alt="<?= e($f["name"]) ?>">
+        </div>
 
         <?php if ($isChampion): ?>
-            <span class="absolute top-4 left-4 bg-red-600 text-white px-4 py-1 rounded-full text-xl font-bold">CAMPEAO</span>
+            <span class="absolute top-4 left-4 bg-red-600 text-white px-4 py-1 rounded-full text-xl font-bold">CAMPEAO OFICIAL</span>
         <?php endif; ?>
     </div>
 

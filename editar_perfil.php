@@ -23,36 +23,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     verify_csrf_or_die();
 
     $name = trim($_POST['name'] ?? '');
-    $email = trim($_POST['email'] ?? '');
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = "Email inválido.";
-    } else {
-        $errors = [];
-        $profile_pic = $user['profile_pic'] ?: 'uploads/default_user.png';
+    $errors = [];
+    $profile_pic = $user['profile_pic'] ?: 'uploads/default_user.png';
 
-        if (!empty($_FILES['profile_pic']['name'])) {
-            $profile_pic = uploadImage($_FILES['profile_pic'], 'user_' . $user_id, $profile_pic, $errors);
-        }
+    if (!empty($_FILES['profile_pic']['name'])) {
+        $profile_pic = uploadImage($_FILES['profile_pic'], 'user_' . $user_id, $profile_pic, $errors);
+    }
 
-        if (empty($errors)) {
-            $update = $conn->prepare("UPDATE users SET name=?, email=?, profile_pic=? WHERE id=?");
-            $update->bind_param("sssi", $name, $email, $profile_pic, $user_id);
+    if (empty($errors)) {
+        $update = $conn->prepare("UPDATE users SET name=?, profile_pic=? WHERE id=?");
+        $update->bind_param("ssi", $name, $profile_pic, $user_id);
 
-            if ($update->execute()) {
-                $success = "Perfil atualizado com sucesso!";
-                $user['name'] = $name;
-                $user['email'] = $email;
-                $user['profile_pic'] = $profile_pic;
-                $_SESSION['user_name'] = $name;
-                $_SESSION['user_email'] = $email;
-                $_SESSION['user_profile_pic'] = $profile_pic;
-            } else {
-                $error = "Erro ao atualizar perfil.";
-            }
+        if ($update->execute()) {
+            $success = "Perfil atualizado com sucesso! O email permanece fixo por segurança.";
+            $user['name'] = $name;
+            $user['profile_pic'] = $profile_pic;
+            $_SESSION['user_name'] = $name;
+            $_SESSION['user_profile_pic'] = $profile_pic;
         } else {
-            $error = implode(' ', $errors);
+            $error = "Erro ao atualizar perfil.";
         }
+    } else {
+        $error = implode(' ', $errors);
     }
 }
 ?>
@@ -100,7 +93,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <input type="text" name="name" value="<?= e($user['name']) ?>" class="w-full bg-neutral-900 border border-neutral-700 rounded px-4 py-2 mb-6 text-neutral-100" required>
 
         <label class="block text-neutral-300 mb-1">Email</label>
-        <input type="email" name="email" value="<?= e($user['email']) ?>" class="w-full bg-neutral-900 border border-neutral-700 rounded px-4 py-2 mb-6 text-neutral-100" required>
+        <input type="email" value="<?= e($user['email']) ?>" class="w-full bg-neutral-800 border border-neutral-700 rounded px-4 py-2 mb-6 text-neutral-400 cursor-not-allowed" readonly>
+        <p class="text-xs text-neutral-500 -mt-4 mb-6">Por segurança, o email da conta não pode ser alterado.</p>
 
         <button class="bg-red-600 px-6 py-3 rounded-lg hover:bg-red-700 transition text-white text-lg">Guardar Alterações</button>
     </form>

@@ -13,6 +13,16 @@ $stmtRole->execute();
 $role = $stmtRole->get_result()->fetch_assoc()['role'] ?? 'user';
 if ($role !== 'admin') die("Acesso negado.");
 
+// Ensure dedicated profile image field exists.
+$hasProfileImage = false;
+$checkProfileImage = $conn->query("SHOW COLUMNS FROM fighters LIKE 'profile_image'");
+if ($checkProfileImage && $checkProfileImage->num_rows > 0) {
+    $hasProfileImage = true;
+} else {
+    $conn->query("ALTER TABLE fighters ADD COLUMN profile_image VARCHAR(255) NULL AFTER image");
+    $hasProfileImage = true;
+}
+
 if (!isset($_GET['id'])) die("Lutador não encontrado.");
 $id = (int) $_GET['id'];
 $stmtGet = $conn->prepare("SELECT * FROM fighters WHERE id=? LIMIT 1");
@@ -35,21 +45,35 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $height = trim($_POST['height'] ?? '');
     $reach = trim($_POST['reach'] ?? '');
     $nationality = trim($_POST['nationality'] ?? '');
+    $isChampion = isset($_POST['is_champion']) ? 1 : 0;
 
     $errors = [];
     $image = $f['image'];
+    $profileImage = !empty($f['profile_image']) ? $f['profile_image'] : $f['image'];
     if (!empty($_FILES['image']['name'])) {
         $image = uploadImage($_FILES['image'], 'fighter', $f['image'], $errors);
     }
+    if (!empty($_FILES['profile_image']['name'])) {
+        $profileImage = uploadImage($_FILES['profile_image'], 'fighter_profile', $profileImage, $errors);
+    }
 
     if (empty($errors)) {
-        $stmt = $conn->prepare("UPDATE fighters SET name=?, weight_class=?, wins=?, losses=?, age=?, height=?, reach=?, nationality=?, image=? WHERE id=?");
-        $stmt->bind_param("ssiiissssi", $name, $weight, $wins, $losses, $age, $height, $reach, $nationality, $image, $id);
+        if ($hasProfileImage) {
+            $stmt = $conn->prepare("UPDATE fighters SET name=?, weight_class=?, wins=?, losses=?, age=?, height=?, reach=?, nationality=?, image=?, profile_image=?, is_champion=? WHERE id=?");
+            $stmt->bind_param("ssiiisssssii", $name, $weight, $wins, $losses, $age, $height, $reach, $nationality, $image, $profileImage, $isChampion, $id);
+        } else {
+            $stmt = $conn->prepare("UPDATE fighters SET name=?, weight_class=?, wins=?, losses=?, age=?, height=?, reach=?, nationality=?, image=?, is_champion=? WHERE id=?");
+            $stmt->bind_param("ssiiissssii", $name, $weight, $wins, $losses, $age, $height, $reach, $nationality, $image, $isChampion, $id);
+        }
 
         if ($stmt->execute()) {
             $success = "Lutador atualizado!";
-            $f = array_merge($f, compact('name', 'weight', 'wins', 'losses', 'age', 'height', 'reach', 'nationality', 'image'));
+            $f = array_merge($f, compact('name', 'weight', 'wins', 'losses', 'age', 'height', 'reach', 'nationality', 'image', 'profileImage'));
             $f['weight_class'] = $weight;
+            $f['is_champion'] = $isChampion;
+            if ($hasProfileImage) {
+                $f['profile_image'] = $profileImage;
+            }
         } else {
             $error = "Erro ao atualizar.";
         }
@@ -83,7 +107,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <label>Altura (m)</label><input type="text" name="height" value="<?= e($f['height']) ?>" class="w-full bg-neutral-900 p-2 rounded mb-4" required>
 <label>Alcance (cm)</label><input type="text" name="reach" value="<?= e($f['reach']) ?>" class="w-full bg-neutral-900 p-2 rounded mb-4" required>
 <label>Nacionalidade</label><input type="text" name="nationality" value="<?= e($f['nationality']) ?>" class="w-full bg-neutral-900 p-2 rounded mb-4" required>
-<label>Imagem</label><input type="file" name="image" accept="image/*" class="mb-4">
+<label>Imagem da Lista/Card</label><input type="file" name="image" accept="image/*" class="mb-4">
+<label>Imagem do Perfil (opcional)</label><input type="file" name="profile_image" accept="image/*" class="mb-4">
+<label class="flex items-center gap-2 mb-4">
+    <input type="checkbox" name="is_champion" value="1" <?= ((int) ($f['is_champion'] ?? 0) === 1) ? 'checked' : '' ?>>
+    Marcar como campeão
+</label>
 <button class="bg-red-600 px-6 py-3 rounded hover:bg-red-700">Guardar</button>
 </form>
 

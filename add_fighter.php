@@ -13,6 +13,16 @@ $stmtRole->execute();
 $role = $stmtRole->get_result()->fetch_assoc()['role'] ?? 'user';
 if ($role !== 'admin') die("Acesso negado.");
 
+// Allow a dedicated profile image without breaking existing databases.
+$hasProfileImage = false;
+$checkProfileImage = $conn->query("SHOW COLUMNS FROM fighters LIKE 'profile_image'");
+if ($checkProfileImage && $checkProfileImage->num_rows > 0) {
+    $hasProfileImage = true;
+} else {
+    $conn->query("ALTER TABLE fighters ADD COLUMN profile_image VARCHAR(255) NULL AFTER image");
+    $hasProfileImage = true;
+}
+
 $success = "";
 $error = "";
 
@@ -27,17 +37,27 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $height = trim($_POST['height'] ?? '');
     $reach = trim($_POST['reach'] ?? '');
     $nationality = trim($_POST['nationality'] ?? '');
+    $isChampion = isset($_POST['is_champion']) ? 1 : 0;
 
     $errors = [];
     $image = uploadImage($_FILES['image'] ?? [], 'fighter', 'uploads/default_fighter.webp', $errors);
+    $profileImage = uploadImage($_FILES['profile_image'] ?? [], 'fighter_profile', '', $errors);
+    if ($profileImage === '') {
+        $profileImage = $image;
+    }
 
     if ($name === '' || $weight === '' || $nationality === '') {
         $errors[] = 'Preenche os campos obrigatórios.';
     }
 
     if (empty($errors)) {
-        $stmt = $conn->prepare("INSERT INTO fighters (name, weight_class, wins, losses, age, height, reach, nationality, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssiiissss", $name, $weight, $wins, $losses, $age, $height, $reach, $nationality, $image);
+        if ($hasProfileImage) {
+            $stmt = $conn->prepare("INSERT INTO fighters (name, weight_class, wins, losses, age, height, reach, nationality, image, profile_image, is_champion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("ssiiisssssi", $name, $weight, $wins, $losses, $age, $height, $reach, $nationality, $image, $profileImage, $isChampion);
+        } else {
+            $stmt = $conn->prepare("INSERT INTO fighters (name, weight_class, wins, losses, age, height, reach, nationality, image, is_champion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("ssiiissssi", $name, $weight, $wins, $losses, $age, $height, $reach, $nationality, $image, $isChampion);
+        }
 
         if ($stmt->execute()) $success = "Lutador criado com sucesso!";
         else $error = "Erro ao criar lutador.";
@@ -71,7 +91,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <label>Altura (m)</label><input type="text" name="height" class="w-full bg-neutral-900 p-2 rounded mb-4" required>
 <label>Alcance (cm)</label><input type="text" name="reach" class="w-full bg-neutral-900 p-2 rounded mb-4" required>
 <label>Nacionalidade</label><input type="text" name="nationality" class="w-full bg-neutral-900 p-2 rounded mb-4" required>
-<label>Imagem</label><input type="file" name="image" accept="image/*" class="mb-4">
+<label>Imagem da Lista/Card</label><input type="file" name="image" accept="image/*" class="mb-4">
+<label>Imagem do Perfil (opcional)</label><input type="file" name="profile_image" accept="image/*" class="mb-4">
+<label class="flex items-center gap-2 mb-4"><input type="checkbox" name="is_champion" value="1"> Marcar como campeão</label>
 <button class="bg-red-600 px-6 py-3 rounded hover:bg-red-700">Criar</button>
 </form>
 

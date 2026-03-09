@@ -1,8 +1,9 @@
-<?php
+﻿<?php
 session_start();
 include "db.php";
 include "security.php";
 include "upload_helper.php";
+include "mailer.php";
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -57,9 +58,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         if ($stmtInsert->execute()) {
-            $success = "Notícia criada com sucesso.";
+            $subject = "Nova noticia no MMA 360: {$title}";
+            $message = "Ola {{name}},\r\n\r\n";
+            $message .= "Foi publicada uma nova noticia no MMA 360.\r\n";
+            $message .= "Titulo: {$title}\r\n\r\n";
+            $message .= "Entra no site para ler a noticia completa.\r\n\r\n";
+            $message .= "Equipa MMA 360";
+
+            $notify = send_broadcast_email_to_registered_users($conn, $subject, $message);
+            $success = "Noticia criada com sucesso. Emails enviados: {$notify['sent']}/{$notify['total']}.";
+            if ((int) $notify['failed'] > 0) {
+                $success .= " Falhas: {$notify['failed']}.";
+            }
         } else {
-            $error = "Erro ao criar notícia.";
+            $error = "Erro ao criar noticia.";
         }
         $stmtInsert->close();
     } else {
@@ -136,6 +148,12 @@ $stmtNews->close();
                         <?= e(date("d/m/Y H:i", strtotime($item['created_at']))) ?> • <?= e($item['author_name'] ?: 'Redação MMA 360') ?>
                     </p>
                     <p class="text-neutral-300"><?= e(mb_strimwidth($item['content'], 0, 240, "...")) ?></p>
+
+                    <form method="POST" action="delete_news.php" class="mt-4" onsubmit="return confirm('Eliminar esta noticia?');">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="news_id" value="<?= (int) $item['id'] ?>">
+                        <button class="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded text-sm">Eliminar</button>
+                    </form>
                 </article>
             <?php endforeach; ?>
         </div>
@@ -144,3 +162,5 @@ $stmtNews->close();
 
 </body>
 </html>
+
+

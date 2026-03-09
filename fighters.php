@@ -66,12 +66,13 @@ $result = $stmt->get_result();
 </div>
 
 <footer class="bg-neutral-900 border-t border-neutral-700 py-10 text-center">
-    <p class="text-neutral-300 text-lg">mma360@gmail.com</p>
+    <p class="text-neutral-300 text-lg">mma360.project@gmail.com</p>
     <p class="mt-4 text-neutral-500 text-sm">© 2026 MMA 360 - Todos os direitos reservados</p>
 </footer>
 
 </body>
 </html>
+
 
 
 

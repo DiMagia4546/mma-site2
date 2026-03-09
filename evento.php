@@ -97,7 +97,7 @@ function flagCodesByNationality(string $nationality): array
         'dutch' => 'NL',
         'netherlands' => 'NL',
         'holandes' => 'NL',
-        'holandÃªs' => 'NL',
+        'holandês' => 'NL',
         'mexican' => 'MX',
         'mexicano' => 'MX',
         'puerto rican' => 'PR',
@@ -451,6 +451,7 @@ $heroBackground = "background-image:
 
 </body>
 </html>
+
 
 
 
